@@ -11,7 +11,8 @@ An interactive, educational simulation of a dopamine synapse. Watch vesicles fus
 - Synaptic cleft with DAT1 reuptake transporters and a few roaming COMT enzymes (an explicit metaphor: real COMT is mostly intracellular)
 - Three receiving neurons with D2 receptors and a ring gauge showing signal against the activation threshold
 - ADHD vs neurotypical parameter sets (receptor count, DAT1 density and speed, COMT activity, recycling share)
-- Interventions: caffeine (adenosine A2A antagonist), methylphenidate (DAT1 blocker), exercise, sleep; a sleep debt that grows with time awake; reservoir depletion
+- Interventions: caffeine (adenosine A2A antagonist that masks part of the sleep debt), methylphenidate (DAT1 blocker, with its side effects and end-of-dose rebound), exercise, sleep; a sleep debt that grows with time awake; reservoir depletion
+- Compulsive scrolling: cheap cue-triggered dopamine bursts that light the neurons up while D2 receptors visibly disappear from the membrane (tolerance), then recover slowly once you stop
 - Live "state toasts" explaining what is going on (brain mode, stimulus level, reservoir trend, interventions, sleep debt, depletion, pause)
 - A colored tooltip on every element, on the canvas and in the controls, with live numbers
 - Italian and English UI, auto-detected and switchable (`?lang=en`)
@@ -23,10 +24,11 @@ An interactive, educational simulation of a dopamine synapse. Watch vesicles fus
 | ADHD / Neurotypical | Switches the parameter set |
 | Stimulus | Novelty, challenge, fear: sets the impulse frequency and the release rate |
 | Time | Simulation speed, 1× to 8× |
-| ☕ Caffeine | 25 s: D2 respond more (threshold −20%), release +10%, masks half of the sleep-debt penalty |
-| 💊 Methylphenidate | 30 s: DAT1 blocked, 85% of reuptake attempts fail |
+| ☕ Caffeine | 25 s: D2 respond more (threshold −20%), release +10%, masks half of the sleep-debt penalty (hatched in the Sleep bar); the masked debt comes back when it wears off |
+| 💊 Methylphenidate | 30 s: DAT1 blocked, 85% of reuptake attempts fail; costs: less recycling, sleep debt ×1.5, 15 s rebound with faster DAT1 afterwards |
 | 🏃 Exercise | 12 s: gentle release at low vesicle cost, faster synthesis |
-| 💤 Sleep | Reset: clears the sleep debt, refills the reservoir |
+| 📱 Scrolling | Toggle: a burst of 12 cheap releases every second; D2 sensitivity drops to 30% and recovers slowly once off |
+| 💤 Sleep | Reset: clears the sleep debt, refills the reservoir; D2 tolerance recovers only 10% |
 | ⏸ / space bar | Pause and resume |
 
 ## How the model works
@@ -35,6 +37,7 @@ An interactive, educational simulation of a dopamine synapse. Watch vesicles fus
 3. Near the presynaptic membrane, DAT1 reuptake catches it with probability 0.94 (ADHD) or 0.78 (neurotypical); methylphenidate cuts that by 85%.
 4. Recaptured dopamine is recycled by VMAT2 (55% ADHD, 75% neurotypical) or destroyed by MAO. In the cleft, COMT occasionally destroys what it touches, and every molecule is gone after 2 s anyway.
 5. Each D2 binding adds 0.5 to the neuron's signal, which decays with a 0.6 s half-life. Above the threshold (0.8) the neuron is "receptive". Sleep debt, which grows with time awake, raises the threshold and shortens the half-life; caffeine lowers the threshold.
+6. Compulsive scrolling downregulates D2 receptors: the number of receptors per neuron shrinks with exposure (down to 30%), so the same stimulus no longer activates the neurons, and only more scrolling does. Receptors return slowly once the scrolling stops.
 
 All parameters live at the top of [js/model.js](js/model.js).
 

@@ -24,12 +24,19 @@ function buildToasts(){
   list.push(mode==='adhd'?{key:'mode',c:C.adhd,t:T('t.mode.adhd.t'),b:T('t.mode.adhd.b')}:{key:'mode',c:C.active,t:T('t.mode.normal.t'),b:T('t.mode.normal.b')});
   list.push(stimToast());
   if(sleepToastTimer>0)list.push({key:'on',c:C.dopa,t:T('t.on.t'),b:T('t.on.b')});
+  const real=Math.round(sleepDebt*100),perc=Math.round(perceivedDebt()*100);
   if(caffeineActive)list.push({key:'caff',c:C.caff,t:T('t.caff.t'),s:T('u.sec',{n:Math.ceil(caffeineTimer)}),
-    b:depleted?T('t.caff.depleted'):T('t.caff.b')+(sleepDebt>0.3?T('t.caff.sleep'):'')});
-  if(mphActive)list.push({key:'mph',c:C.mph,t:T('t.mph.t'),s:T('u.sec',{n:Math.ceil(mphTimer)}),b:depleted?T('t.mph.depleted'):T('t.mph.b')});
+    b:depleted?T('t.caff.depleted'):T('t.caff.b')+(sleepDebt>0.3?T('t.caff.sleep',{real,perc}):'')});
+  else if(caffEndTimer>0)list.push({key:'caffend',c:C.caff,t:T('t.caffend.t'),b:T('t.caffend.b',{real,perc:Math.round(sleepDebt*CAFF_DEBT_MASK*100)})});
+  if(mphActive)list.push({key:'mph',c:C.mph,t:T('t.mph.t'),s:T('u.sec',{n:Math.ceil(mphTimer)}),b:depleted?T('t.mph.depleted'):T('t.mph.b',{trend:trendText()})});
+  else if(mphRebound>0)list.push({key:'mphre',c:C.tol,t:T('t.mphre.t'),s:T('u.sec',{n:Math.ceil(mphRebound)}),b:T('t.mphre.b')});
   if(exerciseActive)list.push({key:'exer',c:C.exer,t:T('t.exer.t'),s:T('u.sec',{n:Math.ceil(exerciseTimer)}),
     b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
-  if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:Math.round(sleepDebt*100)+'%',b:T('t.sleep.b',{thr:Math.round(sleepDebt*150)})});
+  const sens=Math.round(d2Sens*100),D2={sens,rec:effectiveD2(),full:MODES[mode].d2Count};
+  if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:sens+'%',b:T('t.scroll.b',D2)});
+  else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:sens+'%',b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((0.92-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
+  if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:caffeineActive?real+'% → '+perc+'%':real+'%',
+    b:T('t.sleep.b',{thr:Math.round(perceivedDebt()*150)})+(caffeineActive?T('t.sleep.masked',{perc}):T('t.sleep.hint'))});
   if(low)list.push({key:'depl',c:C.dead,t:T('t.depl.t'),s:pct+'%',b:T('t.depl.b')});
   if(paused)list.push({key:'pause',c:C.cleft,t:T('t.pause.t'),b:T('t.pause.b')});
   return list;
@@ -53,7 +60,8 @@ function renderToasts(){
     if(node._t!==t.t){node._t=t.t;node.querySelector('.tt-t').textContent=t.t;}
     const s=t.s||'';if(node._s!==s){node._s=s;node.querySelector('.tt small').textContent=s;}
     if(node._b!==t.b){node._b=t.b;node.querySelector('.tb').innerHTML=t.b;}
-    const want=prev?prev.nextSibling:deck.firstChild;
+    let want=prev?prev.nextSibling:deck.firstChild;
+    while(want&&want.classList.contains('out'))want=want.nextSibling;   // i nodi in uscita non contano: evita di rianimare i vicini
     if(node!==want)deck.insertBefore(node,want);
     prev=node;
   }
@@ -64,7 +72,7 @@ const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.
 const TIPS={
   dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
   comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt})}),
-  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds})}),
+  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:MODES[mode].d2Count,sens:Math.round(d2Sens*100)}):''})}),
   vmat2:()=>({t:T('tip.vmat2.t'),c:C.vmat,b:T('tip.vmat2.b',{ratio:Math.round(MODES[mode].vmat2Ratio*100),rec:stats.recycled})}),
   maob:()=>({t:T('tip.maob.t'),c:C.dead,b:T('tip.maob.b',{maob:stats.maob,comt:stats.comt})}),
   snap:()=>({t:T('tip.snap.t'),c:C.snap,b:T('tip.snap.b',{rel:displayRelRate})}),
@@ -87,6 +95,7 @@ const TIPS={
   speed:()=>({t:T('tip.speed.t'),c:C.active,b:T('tip.speed.b')}),
   caffeine:()=>({t:T('tip.caffeine.t'),c:C.caff,b:T('tip.caffeine.b')}),
   mph:()=>({t:T('tip.mph.t'),c:C.mph,b:T('tip.mph.b')}),
+  scroll:()=>({t:T('tip.scroll.t'),c:C.scroll,b:T('tip.scroll.b',{sens:Math.round(d2Sens*100)})}),
   exercise:()=>({t:T('tip.exercise.t'),c:C.exer,b:T('tip.exercise.b')}),
   sleep:()=>({t:T('tip.sleep.t'),c:C.sleep,b:T('tip.sleep.b')}),
   serbatoio:()=>({t:T('tip.serbatoio.t'),c:C.dopa,b:T('tip.serbatoio.b',{trend:trendText()})}),
@@ -153,7 +162,13 @@ function updateHUD(){
   setWidth('caff-fill',(caffeineActive?Math.max(0,caffeineTimer/CAFF_DUR*100).toFixed(1):0)+'%');
   setWidth('mph-fill',(mphActive?Math.max(0,mphTimer/MPH_DUR*100).toFixed(1):0)+'%');
   setWidth('exer-fill',(exerciseActive?Math.max(0,exerciseTimer/EXER_DUR*100).toFixed(1):0)+'%');
-  setWidth('sleep-fill',(sleepDebt*100).toFixed(1)+'%');
+  // Barra del sonno: parte piena = debito percepito, parte tratteggiata = quota mascherata dalla caffeina
+  const perc=perceivedDebt()*100,real=sleepDebt*100;
+  setWidth('sleep-fill',perc.toFixed(1)+'%');
+  const mk=$('sleep-mask'),ml=perc.toFixed(1)+'%',mw=Math.max(0,real-perc).toFixed(1)+'%';
+  if(hudCache.ml!==ml){hudCache.ml=ml;mk.style.left=ml;}
+  if(hudCache.mw!==mw){hudCache.mw=mw;mk.style.width=mw;}
+  setWidth('scroll-fill',scrollActive?'100%':'0%');
   if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
   if(hudCache.mode!==mode){hudCache.mode=mode;document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('is-on',b.dataset.mode===mode));}
 }
@@ -175,6 +190,7 @@ function initUI(){
   });
   $('btn-caffeine').addEventListener('click',startCaffeine);
   $('btn-mph').addEventListener('click',startMph);
+  $('btn-scroll').addEventListener('click',toggleScroll);
   $('btn-exercise').addEventListener('click',startExercise);
   document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
 

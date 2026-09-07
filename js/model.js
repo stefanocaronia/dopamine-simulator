@@ -16,16 +16,23 @@ const CAFF_DUR=25,MPH_DUR=30,EXER_DUR=12;
 const CAFF_THRESH=0.8,CAFF_RELEASE=1.10,CAFF_DEBT_MASK=0.5;
 // Metilfenidato = blocco dei DAT1: quota di ricaptazioni che fallisce, rallentamento dei trasportatori
 const MPH_BLOCK=0.85,MPH_SLOW=0.3;
+// Effetti collaterali del metilfenidato (semplificati): insonnia (debito di sonno più veloce) e rebound di fine dose (DAT1 più veloci)
+const MPH_SLEEP_MULT=1.5,MPH_REBOUND_DUR=15,MPH_REBOUND_SPEED=1.3;
+// Fine della caffeina: la stanchezza mascherata torna tutta insieme (toast di avviso)
+const CAFF_END_TOAST=5;
 // Debito di sonno: cresce con il tempo di veglia (adenosina), non con lo stimolo. Pieno in ~3 minuti simulati
 const SLEEP_DEBT_RATE=0.0055;
-const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',stimLow:'#7fb8ff',stimHigh:'#ffb347'};
+// Scrolling compulsivo: raffiche di rilascio a basso costo scatenate da "segnali"; i D2 si riducono (tolleranza) e recuperano lentamente
+const SCROLL_BURST_RATE=1.0,SCROLL_BURST_N=12,SCROLL_COST=0.03,SCROLL_DESENS=0.02,SCROLL_RECOVER=0.004,D2_SENS_MIN=0.3,SLEEP_TOL_RECOVER=0.1;
+const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',stimLow:'#7fb8ff',stimHigh:'#ffb347'};
 
 // ───────────────────────── Stato ─────────────────────────
 let mode='adhd',stimulus=0.10,speedMul=2,paused=false;
 let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=[],comts=[];
 let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
-let caffeineTimer=0,caffeineActive=false,mphTimer=0,mphActive=false,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
+let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
+let scrollActive=false,scrollAccum=0,burstLeft=0,d2Sens=1,effD2=null;   // d2Sens: sensibilità/densità dei D2 (1 = normale)
 let rateWindow=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0;
 let relAccum=0,now=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
@@ -79,7 +86,7 @@ function rebuildAll(){
 function rebuildReceptors(){
   const cfg=MODES[mode];receptors=[];
   const recX=CLEFT.x+CLEFT.w+4;
-  postNeurons.forEach((n,ni)=>{const c=cfg.d2Count,sp=n.h/(c+1),sc=Math.min(1,sp/12);   // sc: scala del glifo su schermi piccoli
+  postNeurons.forEach((n,ni)=>{const c=effectiveD2(),sp=n.h/(c+1),sc=Math.min(1,sp/12);   // sc: scala del glifo su schermi piccoli
     for(let j=0;j<c;j++)receptors.push({x:recX,y:n.y+sp*(j+1),ni,sc,occupied:false,particle:null,timer:0,cooldown:0});
   });
 }
@@ -113,11 +120,12 @@ function spawn(x,y){
   return p;
 }
 
-// Soglia di attivazione: sale con il debito di sonno; la caffeina la abbassa e maschera metà della penalità
-function thresholdNow(){
-  const debtPenalty=1.5*sleepDebt*(caffeineActive?CAFF_DEBT_MASK:1);
-  return ACT_THRESHOLD*(1+debtPenalty)*(caffeineActive?CAFF_THRESH:1);
-}
+// Debito percepito: la caffeina ne maschera una parte (quella reale resta)
+function perceivedDebt(){return sleepDebt*(caffeineActive?CAFF_DEBT_MASK:1);}
+// Recettori D2 effettivi per neurone: seguono la sensibilità (tolleranza da scrolling)
+function effectiveD2(){return Math.max(2,Math.round(MODES[mode].d2Count*d2Sens));}
+// Soglia di attivazione: sale con il debito percepito; la caffeina la abbassa
+function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineActive?CAFF_THRESH:1);}
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
@@ -127,15 +135,17 @@ function update(dt){
   const cfg=MODES[mode],sdt=dt*speedMul;
   now+=dt;
 
-  if(caffeineTimer>0){caffeineTimer-=dt;if(caffeineTimer<=0){caffeineTimer=0;caffeineActive=false;}}
-  if(mphTimer>0){mphTimer-=dt;if(mphTimer<=0){mphTimer=0;mphActive=false;}}
+  if(caffeineTimer>0){caffeineTimer-=dt;if(caffeineTimer<=0){caffeineTimer=0;caffeineActive=false;if(sleepDebt>0.2)caffEndTimer=CAFF_END_TOAST;}}
+  if(caffEndTimer>0)caffEndTimer-=dt;
+  if(mphTimer>0){mphTimer-=dt;if(mphTimer<=0){mphTimer=0;mphActive=false;mphRebound=MPH_REBOUND_DUR;}}
+  if(mphRebound>0)mphRebound-=dt;
   if(exerciseTimer>0){
     exerciseTimer-=dt;
     vesCount=Math.min(MAX_VES,vesCount+(0.5-sleepDebt*0.3)*sdt);   // l'esercizio accelera la sintesi, meno se c'è debito di sonno
     if(exerciseTimer<=0){exerciseTimer=0;exerciseActive=false;}
   }
-  // Debito di sonno: cresce con il tempo di veglia, indipendentemente dallo stimolo
-  sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*sdt);
+  // Debito di sonno: cresce con il tempo di veglia, indipendentemente dallo stimolo (più in fretta sotto stimolante)
+  sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*(mphActive?MPH_SLEEP_MULT:1)*sdt);
   if(sleepToastTimer>0)sleepToastTimer-=dt;
 
   // Rilascio: l'esercizio aggiunge un boost dolce (ridotto dal debito di sonno), la caffeina lo alza un po'
@@ -151,6 +161,16 @@ function update(dt){
     }
   }
   if(vesCount<MAX_VES){vesCount+=0.2*sdt;if(vesCount>MAX_VES)vesCount=MAX_VES;}
+
+  // Scrolling compulsivo: raffiche a basso costo e desensibilizzazione dei D2; senza scrolling i D2 recuperano piano
+  if(scrollActive){
+    scrollAccum+=SCROLL_BURST_RATE*sdt;
+    while(scrollAccum>=1){scrollAccum-=1;burstLeft+=SCROLL_BURST_N;for(let k=0;k<3;k++)if(apPulses.length<40)apPulses.push({x:-10-k*14,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
+    d2Sens=Math.max(D2_SENS_MIN,d2Sens-SCROLL_DESENS*sdt);
+  }else if(d2Sens<1)d2Sens=Math.min(1,d2Sens+SCROLL_RECOVER*sdt);
+  if(burstLeft>0){let n=Math.min(burstLeft,Math.ceil(2*speedMul));burstLeft-=n;
+    while(n-->0&&vesCount>1){vesCount=Math.max(0,vesCount-SCROLL_COST);spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;}}
+  const eff=effectiveD2();if(eff!==effD2){effD2=eff;rebuildReceptors();}   // i recettori spariscono/ricompaiono con la tolleranza
 
   // Potenziali d'azione lungo l'assone (solo visivi): la frequenza segue lo stimolo
   apAccum+=(stimulus*10+(exerciseActive?2:0))*dt;
@@ -260,7 +280,7 @@ function update(dt){
       if(best){d.target=best;d.state='reaching';d.timer=0;}
     }
     if(d.state==='reaching'){
-      const spd=mphActive?cfg.dat1Speed*MPH_SLOW:cfg.dat1Speed;
+      const spd=cfg.dat1Speed*(mphActive?MPH_SLOW:1)*(mphRebound>0?MPH_REBOUND_SPEED:1);
       d.timer+=sdt*spd;d.arm=Math.min(1,d.timer*2);
       if(d.target&&d.target.state!=='free'){d.state='idle';d.arm=0;d.target=null;continue;}
       if(d.arm>=1&&d.target){
@@ -269,7 +289,7 @@ function update(dt){
         else{d.target.state='reuptake';d.target.target=reuptakeTarget(d.y);d.state='pulling';d.timer=0;rateReabCount++;}
       }
     }
-    if(d.state==='pulling'){d.timer+=sdt*cfg.dat1Speed;d.arm=Math.max(0,1-d.timer*2.5);if(d.arm<=0){d.state='idle';d.target=null;d.timer=0;}}
+    if(d.state==='pulling'){d.timer+=sdt*cfg.dat1Speed*(mphRebound>0?MPH_REBOUND_SPEED:1);d.arm=Math.max(0,1-d.timer*2.5);if(d.arm<=0){d.state='idle';d.target=null;d.timer=0;}}
   }
 
   // COMT: probabilità di distruzione indipendente dal frame rate (equivale a comtRate × scala a 60 fps)
@@ -313,13 +333,17 @@ function classifyTrend(){
 }
 
 // ───────────────────────── Comandi ─────────────────────────
-function setMode(m){if(m===mode||!MODES[m])return;mode=m;rebuildReceptors();rebuildDat1();}
+function setMode(m){if(m===mode||!MODES[m])return;mode=m;effD2=null;rebuildReceptors();rebuildDat1();}
+// "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;
   particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};relAccum=0;sleepToastTimer=3;
+  scrollActive=false;scrollAccum=0;burstLeft=0;mphRebound=0;caffEndTimer=0;
+  d2Sens=Math.min(1,d2Sens+SLEEP_TOL_RECOVER);effD2=null;
   rebuildAll();
 }
-function startCaffeine(){if(caffeineActive)return;caffeineTimer=CAFF_DUR;caffeineActive=true;}
-function startMph(){if(mphActive)return;mphTimer=MPH_DUR;mphActive=true;}
+function startCaffeine(){if(caffeineActive)return;caffeineTimer=CAFF_DUR;caffeineActive=true;caffEndTimer=0;}
+function startMph(){if(mphActive)return;mphTimer=MPH_DUR;mphActive=true;mphRebound=0;}
+function toggleScroll(){scrollActive=!scrollActive;if(!scrollActive)burstLeft=0;}
 function startExercise(){if(exerciseActive)return;exerciseTimer=EXER_DUR;exerciseActive=true;}
 function togglePause(){paused=!paused;}

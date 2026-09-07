@@ -25,7 +25,7 @@ Load order in `index.html` matters: util → i18n dictionaries → i18n → mode
 
 ## 3. Architecture
 - Classic scripts sharing one global scope. Top-level `let`/`const`/functions declared in one file are visible in the others. Nothing runs at load time except `main.js`, so cross-file references are safe. Keep it that way: no top-level calls in the other files.
-- State lives in `model.js`. `render.js` reads it and only writes the trails buffer. `ui.js` reads it and calls model commands: `setMode`, `resetSim`, `startCaffeine`, `startMph`, `startExercise`, `togglePause`. `model.js` never touches the DOM.
+- State lives in `model.js`. `render.js` reads it and only writes the trails buffer. `ui.js` reads it and calls model commands: `setMode`, `resetSim`, `startCaffeine`, `startMph`, `startExercise`, `toggleScroll`, `togglePause`. `model.js` never touches the DOM.
 - Geometry (`PRE`, `CLEFT`, `POST`, `SNAP`, `VMAT_Z`, `MAO_Z`, `TERM`) is computed by `setGeometry(w, h)` and shared by simulation, drawing and hit-testing; `postGeom(i)` returns the geometry of the receiving cells.
 - Time: `dt` is real seconds capped at 0.05; `sdt = dt × speedMul` drives the model. Caffeine, methylphenidate and exercise timers run in real seconds on purpose. The COMT kill probability is frame-rate independent: `1 − (1 − comtRate)^(sdt·60)`.
 - Rendering: glow through cached sprites (no per-particle `shadowBlur`); trails through a persistence canvas faded each frame with `destination-out` (long jumps leave a dot, not a line); a hover highlight; every label goes through `T()`.
@@ -46,11 +46,12 @@ Load order in `index.html` matters: util → i18n dictionaries → i18n → mode
 Constants: reservoir 100 units; release rate = stimulus × 30 per second (+15 with exercise, ×1.10 with caffeine); cost 0.05 per release (0.02 with exercise); synthesis 0.2 per second; a molecule lives 2 s in the cleft; each binding adds 0.5 signal; threshold 0.8; half-life 0.6 s.
 
 Interventions:
-- **Caffeine** (25 s): adenosine A2A antagonism. Threshold × 0.8, release × 1.10, and it halves the sleep-debt penalty on the threshold. No effect on DAT1.
-- **Methylphenidate** (30 s): DAT1 block. 85% of reuptake attempts fail, transporters move at 0.3× speed.
+- **Caffeine** (25 s): adenosine A2A antagonism. Threshold × 0.8, release × 1.10, and it halves the sleep-debt penalty on the threshold (`perceivedDebt()`): the Sleep bar shows the perceived debt solid and the masked share hatched. No effect on DAT1. When it wears off with debt above 20%, a 5 s "caffeine worn off" toast shows the perceived debt jumping back.
+- **Methylphenidate** (30 s): DAT1 block. 85% of reuptake attempts fail, transporters move at 0.3× speed. Simulated side effects: sleep debt grows ×1.5 while active; less reuptake means less recycling (emergent); after the dose a 15 s rebound with DAT1 speed ×1.3.
 - **Exercise** (12 s): +15 releases/s at 0.02 cost each, synthesis +0.5/s (reduced by sleep debt).
-- **Sleep**: reset of debt, reservoir, cleft and counters.
-- **Sleep debt** grows with time awake at 0.0055 per simulated second (full in about 3 minutes), independent of the stimulus. It raises the threshold by ×(1 + 1.5 × debt) and divides the signal half-life by (1 + 1.2 × debt).
+- **Scrolling** (toggle): one burst of 12 releases per simulated second at 0.03 cost each (cue-triggered, low effort). While on, D2 sensitivity `d2Sens` drops by 0.02/s down to 0.3; off, it recovers by 0.004/s. The effective receptor count per neuron is `round(d2Count × d2Sens)` (min 2) and `rebuildReceptors()` runs whenever it changes, so receptors visibly disappear and return. A "D2 tolerance" toast stays while `d2Sens < 0.92`.
+- **Sleep**: reset of debt, reservoir, cleft and counters; tolerance recovers only +0.1.
+- **Sleep debt** grows with time awake at 0.0055 per simulated second (full in about 3 minutes), independent of the stimulus. It raises the threshold by ×(1 + 1.5 × perceived debt) and divides the signal half-life by (1 + 1.2 × debt).
 
 ## 5. Running and testing
 - Any static server from the repo root (`python -m http.server 8080`), or open `index.html` directly.
@@ -86,7 +87,7 @@ Suggested order: es, fr, de, pt.
 - [ ] Screenshots or a short GIF for the README (`docs/screenshots/`)
 - [ ] Localization: es, fr, de, pt
 - [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); tonic baseline release at zero stimulus; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights
-- [ ] Compulsive high-reward, low-effort activities (scrolling, gaming): frequent cue-triggered bursts plus slow D2 downregulation (tolerance) and recovery; see the discussion in the fidelity notes before designing it
+- [ ] Scrolling refinements: variable-reward schedule, cue learning (anticipation bursts before the reward), a visible D2 sensitivity gauge
 - [ ] Optional: docked-vesicle animation on release; D1 receptors
 - [ ] Accessibility: keyboard access to tooltips, reduced-motion mode
 
@@ -95,5 +96,6 @@ Suggested order: es, fr, de, pt.
 - v2, 2026-09-07: visual rewrite (axon terminal, ring gauges, sprite glow, trails, toasts, tooltips, in-canvas rates), same model; fixes for the zero-size layout crash and the frame-rate-dependent COMT and toast timers
 - v3, 2026-09-07: split into modules, i18n (it/en), documentation, own repository
 - v3.1, 2026-09-07: biology corrections: caffeine as A2A antagonist, methylphenidate as DAT blocker, COMT weight reduced and declared a metaphor, MAO label, sleep debt grows with time awake
+- v3.2, 2026-09-07: perceived vs real sleep debt in the Sleep bar, caffeine crash toast, methylphenidate side effects and rebound, compulsive scrolling with D2 tolerance
 
 Earlier single-file versions can be retrieved with `git show <commit>:come-funziona-la-dopamina.html`.
