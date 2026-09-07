@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulazione Dopamina — ADHD vs Neurotipico</title>
+<meta name="description" content="Interactive, educational simulation of a dopamine synapse: ADHD vs neurotypical, stimulus, caffeine, exercise and sleep debt. Simulazione interattiva di una sinapsi dopaminergica.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1><span data-i18n="h.title"></span><small data-i18n="h.sub"></small></h1>
+  <div class="lang" role="group" aria-label="Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
+</header>
+<div id="app">
+  <div id="stage">
+    <div id="canvas-wrap">
+      <canvas id="c"></canvas>
+      <button id="btn-pause" data-tip="pause"><svg class="ic-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg><svg class="ic-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.6v10.8L13.4 8z"/></svg></button>
+    </div>
+    <div id="toasts"></div>
+  </div>
+  <aside id="sidebar">
+    <div class="card">
+      <h2 data-i18n="card.brain"></h2>
+      <div class="seg" id="mode-seg"><button class="adhd is-on" data-mode="adhd" data-tip="mode-adhd" data-i18n="mode.adhd"></button><button class="norm" data-mode="normal" data-tip="mode-normal" data-i18n="mode.normal"></button></div>
+      <div class="ctrl"><div class="lbl" data-tip="stimulus"><span data-i18n="ctl.stimulus"></span><span class="val" id="stim-val">10%</span></div><input type="range" id="stimulus" min="0" max="100" value="10"></div>
+      <div class="ctrl"><div class="lbl" data-tip="speed"><span data-i18n="ctl.speed"></span><span class="val" id="speed-val">2×</span></div><input type="range" id="speed" min="1" max="8" value="2" step="0.5"></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="card.actions"></h2>
+      <button class="pu" id="btn-caffeine" data-tip="caffeine"><span class="fill caff" id="caff-fill"></span><span class="in" data-i18n="btn.caffeine"></span></button>
+      <button class="pu" id="btn-exercise" data-tip="exercise"><span class="fill exer" id="exer-fill"></span><span class="in" data-i18n="btn.exercise"></span></button>
+      <button class="pu" id="btn-reset" data-tip="sleep"><span class="fill sleep" id="sleep-fill"></span><span class="in" data-i18n="btn.sleep"></span></button>
+      <div class="meter" data-tip="serbatoio"><span class="fill" id="serbatoio-fill"></span><span class="in"><span data-i18n="meter.reservoir"></span><b id="serbatoio-pct">100%</b></span></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="card.legend"></h2>
+      <div class="legend">
+        <div class="leg" data-tip="particle"><span class="dot" style="background:#00ff88;color:#00ff88"></span><span data-i18n="leg.dopa"></span></div>
+        <div class="leg" data-tip="dead"><span class="dot" style="background:#ff3355;color:#ff3355"></span><span data-i18n="leg.dead"></span></div>
+        <div class="leg" data-tip="dat1"><span class="gl-dat"></span><span data-i18n="leg.dat1"></span></div>
+        <div class="leg" data-tip="comt"><span class="gl-comt"></span><span data-i18n="leg.comt"></span></div>
+        <div class="leg" data-tip="vmat2"><span class="gl-vmat"></span><span data-i18n="leg.vmat2"></span></div>
+        <div class="leg" data-tip="maob"><span class="gl-mao"></span><span data-i18n="leg.maob"></span></div>
+        <div class="leg" data-tip="d2"><span class="gl-d2"></span><span data-i18n="leg.d2"></span></div>
+        <div class="leg" data-tip="post"><span class="dot" style="background:#00e5ff;color:#00e5ff"></span><span data-i18n="leg.active"></span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+<footer class="credits" data-i18n="footer"></footer>
+<div id="tip"></div>
+<script src="js/util.js"></script>
+<script src="i18n/it.js"></script>
+<script src="i18n/en.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/model.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

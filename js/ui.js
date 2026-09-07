@@ -1,0 +1,190 @@
+'use strict';
+/* ui.js — toast di stato, tooltip, hit-test sul canvas, controlli e HUD.
+   Tutti i testi passano da T() (js/i18n.js). */
+
+// ───────────────────────── Toast di stato (titolo colorato + spiegazione) ─────────────────────────
+function trendText(){
+  const tr=trendShown;
+  if(trendState==='full')return T('t.trend.full');
+  if(trendState==='down'){
+    const v=Math.min(tr,-0.1),secs=Math.round(vesCount/-v/5)*5;   // "vuoto tra" arrotondato a 5 s
+    return T('t.trend.down',{tr:fmt1(v),empty:(v<-0.3&&secs>0)?T('t.trend.empty',{s:secs}):''});
+  }
+  if(trendState==='up')return T('t.trend.up',{tr:fmt1(Math.max(tr,0.1))});
+  return T('t.trend.hold',{tr:(tr>=0?'+':'')+fmt1(tr)});
+}
+function stimToast(){
+  const v=Math.round(stimulus*100),act=postNeurons.filter(n=>n.active).length;
+  const P={rel:displayRelRate,act:T('u.receptive',{a:act,n:postNeurons.length}),trend:trendText()};
+  const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
+  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
+}
+function buildToasts(){
+  const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
+  list.push(mode==='adhd'?{key:'mode',c:C.adhd,t:T('t.mode.adhd.t'),b:T('t.mode.adhd.b')}:{key:'mode',c:C.active,t:T('t.mode.normal.t'),b:T('t.mode.normal.b')});
+  list.push(stimToast());
+  if(sleepToastTimer>0)list.push({key:'on',c:C.dopa,t:T('t.on.t'),b:T('t.on.b')});
+  if(caffeineActive)list.push({key:'caff',c:C.caff,t:T('t.caff.t'),s:T('u.sec',{n:Math.ceil(caffeineTimer)}),
+    b:depleted?T('t.caff.depleted'):T('t.caff.b')+(sleepDebt>0.3?T('t.caff.sleep',{block:Math.round((0.85-sleepDebt*0.4)*100)}):'')});
+  if(exerciseActive)list.push({key:'exer',c:C.exer,t:T('t.exer.t'),s:T('u.sec',{n:Math.ceil(exerciseTimer)}),
+    b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
+  if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:Math.round(sleepDebt*100)+'%',b:T('t.sleep.b',{thr:Math.round(sleepDebt*150)})});
+  if(low)list.push({key:'depl',c:C.dead,t:T('t.depl.t'),s:pct+'%',b:T('t.depl.b')});
+  if(paused)list.push({key:'pause',c:C.cleft,t:T('t.pause.t'),b:T('t.pause.b')});
+  return list;
+}
+const toastNodes=new Map();
+function themeNode(node,c){node.style.setProperty('--tc',c);node.style.setProperty('--tc-glow',hexA(c,.35));node.style.borderColor=hexA(c,.45);node.style.background=hexA(c,.10);}
+// Riconcilia i nodi per chiave: i testi cambiano senza rianimare, i toast nuovi entrano, quelli spariti escono
+function renderToasts(){
+  const list=buildToasts(),deck=$('toasts'),keys=new Set(list.map(t=>t.key));
+  for(const [k,node] of toastNodes){if(!keys.has(k)){toastNodes.delete(k);node.classList.add('out');setTimeout(()=>node.remove(),220);}}
+  let prev=null;
+  for(const t of list){
+    let node=toastNodes.get(t.key);
+    if(!node){
+      node=document.createElement('div');node.className='toast';node.dataset.key=t.key;
+      node.innerHTML='<div class="tt"><span class="tt-t"></span><small></small></div><div class="tb"></div>';
+      node._c='';node._t='';node._s='';node._b='';
+      toastNodes.set(t.key,node);
+    }
+    if(node._c!==t.c){node._c=t.c;themeNode(node,t.c);}
+    if(node._t!==t.t){node._t=t.t;node.querySelector('.tt-t').textContent=t.t;}
+    const s=t.s||'';if(node._s!==s){node._s=s;node.querySelector('.tt small').textContent=s;}
+    if(node._b!==t.b){node._b=t.b;node.querySelector('.tb').innerHTML=t.b;}
+    const want=prev?prev.nextSibling:deck.firstChild;
+    if(node!==want)deck.insertBefore(node,want);
+    prev=node;
+  }
+}
+
+// ───────────────────────── Tooltip ─────────────────────────
+const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.active,gauge:C.active,particle:C.dopa,dead:C.dead,rates:C.dopa};
+const TIPS={
+  dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,slowed:caffeineActive?T('tip.dat1.slowed'):''})};},
+  comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt})}),
+  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds})}),
+  vmat2:()=>({t:T('tip.vmat2.t'),c:C.vmat,b:T('tip.vmat2.b',{ratio:Math.round(MODES[mode].vmat2Ratio*100),rec:stats.recycled})}),
+  maob:()=>({t:T('tip.maob.t'),c:C.dead,b:T('tip.maob.b',{maob:stats.maob,comt:stats.comt})}),
+  snap:()=>({t:T('tip.snap.t'),c:C.snap,b:T('tip.snap.b',{rel:displayRelRate})}),
+  vesicles:()=>({t:T('tip.vesicles.t'),c:C.dopa,b:T('tip.vesicles.b',{pct:Math.round(vesCount/MAX_VES*100),trend:trendText()})}),
+  axon:()=>({t:T('tip.axon.t'),c:C.ap,b:T('tip.axon.b',{stim:Math.round(stimulus*100)})}),
+  terminal:()=>({t:T('tip.terminal.t'),c:C.snap,b:T('tip.terminal.b')}),
+  cleft:()=>({t:T('tip.cleft.t'),c:C.cleft,b:T('tip.cleft.b',{free:freeCount()})}),
+  post:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.post.t'),c:C.active,
+    b:T('tip.post.b')+(n?T('tip.post.state',{state:n.active?T('u.state.receptive'):T('u.state.silent'),sig:Math.round(n.signal/thresholdNow()*100)}):'')};},
+  gauge:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.gauge.t'),c:C.active,
+    b:T('tip.gauge.b',{hl:fmtN(halfLifeNow(),2),now:n?T('tip.gauge.now',{sig:Math.round(n.signal/thresholdNow()*100)}):''})};},
+  particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy';
+    const k=dead?'dead':st==='bound'?'bound':st==='reuptake'?'reuptake':st==='recycle'?'recycle':'free';
+    return {t:T('tip.particle.'+k),c:dead?C.dead:C.dopa,b:T('tip.particle.b',{age:p&&!dead?T('tip.particle.age',{age:fmt1(p.age)}):''})};},
+  dead:()=>({t:T('tip.dead.t'),c:C.dead,b:T('tip.dead.b',{dead:stats.maob+stats.comt})}),
+  rates:()=>({t:T('tip.rates.t'),c:C.dopa,b:T('tip.rates.b',{rel:displayRelRate,reab:displayReabRate,dead:displayDeadRate,free:freeCount(),binds:stats.binds,rec:stats.recycled,deadTot:stats.maob+stats.comt})}),
+  'mode-adhd':()=>({t:T('tip.mode-adhd.t'),c:C.adhd,b:T('tip.mode-adhd.b')}),
+  'mode-normal':()=>({t:T('tip.mode-normal.t'),c:C.active,b:T('tip.mode-normal.b')}),
+  stimulus:()=>({t:T('tip.stimulus.t'),c:C.dopa,b:T('tip.stimulus.b')}),
+  speed:()=>({t:T('tip.speed.t'),c:C.active,b:T('tip.speed.b')}),
+  caffeine:()=>({t:T('tip.caffeine.t'),c:C.caff,b:T('tip.caffeine.b')}),
+  exercise:()=>({t:T('tip.exercise.t'),c:C.exer,b:T('tip.exercise.b')}),
+  sleep:()=>({t:T('tip.sleep.t'),c:C.sleep,b:T('tip.sleep.b')}),
+  serbatoio:()=>({t:T('tip.serbatoio.t'),c:C.dopa,b:T('tip.serbatoio.b',{trend:trendText()})}),
+  pause:()=>({t:T('tip.pause.t'),c:C.cleft,b:T('tip.pause.b')}),
+};
+
+const tip=$('tip');
+let hover=null,canvasMouse={over:false,mx:0,my:0,cx:0,cy:0},uiTip=null,lastHit=null,lastHitT=0,touchTimer=0;
+function showTip(key,cx,cy,h){
+  const f=TIPS[key];if(!f){hideTip();return;}
+  const d=f(h||{}),html='<div class="tt">'+d.t+'</div><div class="tb">'+d.b+'</div>';
+  if(tip._html!==html){tip._html=html;tip.innerHTML=html;}
+  if(tip._c!==d.c){tip._c=d.c;tip.style.setProperty('--tc',d.c);tip.style.setProperty('--tc-glow',hexA(d.c,.35));tip.style.borderColor=hexA(d.c,.55);}
+  tip.classList.add('show');
+  const w=tip.offsetWidth,hh=tip.offsetHeight,vw=window.innerWidth,vh=window.innerHeight;
+  let x=cx+16,y=cy+18;
+  if(x+w>vw-8)x=cx-16-w;if(x<8)x=8;
+  if(y+hh>vh-8)y=cy-18-hh;if(y<8)y=8;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function hideTip(){tip.classList.remove('show');}
+
+function hitTest(mx,my){
+  for(const d of dat1s)if(Math.hypot(mx-d.x,my-d.y)<14)return {key:'dat1',x:d.x,y:d.y,r:12};
+  for(const c of comts)if(Math.hypot(mx-c.x,my-c.y)<14)return {key:'comt',x:c.x,y:c.y,r:11};
+  for(const r of receptors)if(Math.hypot(mx-r.x-2,my-r.y)<9)return {key:'d2',x:r.x+2,y:r.y,r:8};
+  for(let i=0;i<postNeurons.length;i++){const g=postGeom(i);if(Math.hypot(mx-g.gx,my-g.ncy)<g.R+8)return {key:'gauge',x:g.gx,y:g.ncy,r:g.R+4,ni:i};}
+  const inR=R=>mx>R.x&&mx<R.x+R.w&&my>R.y&&my<R.y+R.h;
+  if(inR(VMAT_Z))return {key:'vmat2',rect:VMAT_Z};
+  if(inR(MAO_Z))return {key:'maob',rect:MAO_Z};
+  if(mx>PRE.w-9&&mx<PRE.w+3&&my>SNAP.y&&my<SNAP.y+SNAP.h)return {key:'snap',rect:{x:PRE.w-6,y:SNAP.y,w:6,h:SNAP.h}};
+  if(my>H-44&&mx>CLEFT.x+CLEFT.w*.1&&mx<CLEFT.x+CLEFT.w*.9)return {key:'rates',rect:{x:CLEFT.x+CLEFT.w*.1,y:H-42,w:CLEFT.w*.8,h:24}};
+  for(const v of vesicles)if(Math.hypot(mx-v.x,my-v.y)<7)return {key:'vesicles',x:v.x,y:v.y,r:6};
+  for(const p of particles)if(Math.hypot(mx-p.x,my-p.y)<8)return {key:'particle',x:p.x,y:p.y,r:7,p};
+  if(mx<TERM.xJ+6&&Math.abs(my-TERM.cy)<TERM.axonR)return {key:'axon'};
+  const u=(PRE.w-mx)/TERM.rx,v=(my-TERM.cy)/TERM.ry;
+  if(mx<PRE.w&&u*u+v*v<=1)return {key:'terminal'};
+  for(let i=0;i<postNeurons.length;i++){const g=postGeom(i),uu=(mx-g.x0)/g.rx,vv=(my-g.ncy)/g.ry;if(mx>=g.x0&&uu*uu+vv*vv<=1)return {key:'post',ni:i};}
+  if(mx>=CLEFT.x&&mx<=CLEFT.x+CLEFT.w)return {key:'cleft'};
+  return null;
+}
+function updateHover(){
+  if(canvasMouse.over&&ready){
+    let hit=hitTest(canvasMouse.mx,canvasMouse.my);
+    // Le particelle si muovono: il tooltip resta agganciato per un attimo, così non sfarfalla
+    if(hit&&hit.key==='particle'){lastHit=hit;lastHitT=wall();}
+    else if(lastHit&&wall()-lastHitT<0.6&&(!hit||hit.key==='cleft'||hit.key==='terminal')){hit=lastHit;if(hit.p){hit.x=hit.p.x;hit.y=hit.p.y;}}
+    hover=hit;
+    canvas.style.cursor=hit?'help':'default';
+    if(hit)showTip(hit.key,canvasMouse.cx,canvasMouse.cy,hit);else hideTip();
+  }else{
+    hover=null;
+    if(uiTip)showTip(uiTip.key,uiTip.cx,uiTip.cy);
+  }
+}
+
+// ───────────────────────── HUD (barre, pulsanti) ─────────────────────────
+const hudCache={};
+function setText(id,v){if(hudCache[id]!==v){hudCache[id]=v;$(id).textContent=v;}}
+function setWidth(id,v){const k=id+'.w';if(hudCache[k]!==v){hudCache[k]=v;$(id).style.width=v;}}
+function updateHUD(){
+  const pct=Math.round(vesCount/MAX_VES*100);
+  setWidth('serbatoio-fill',pct+'%');setText('serbatoio-pct',pct+'%');
+  setWidth('caff-fill',(caffeineActive?Math.max(0,caffeineTimer/CAFF_DUR*100).toFixed(1):0)+'%');
+  setWidth('exer-fill',(exerciseActive?Math.max(0,exerciseTimer/EXER_DUR*100).toFixed(1):0)+'%');
+  setWidth('sleep-fill',(sleepDebt*100).toFixed(1)+'%');
+  if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
+  if(hudCache.mode!==mode){hudCache.mode=mode;document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('is-on',b.dataset.mode===mode));}
+}
+
+// ───────────────────────── Controlli ─────────────────────────
+function syncRange(el,v,min,max){el.style.setProperty('--pct',((v-min)/(max-min)*100)+'%');}
+function initUI(){
+  const stimEl=$('stimulus'),speedEl=$('speed');
+  stimEl.addEventListener('input',e=>{stimulus=e.target.value/100;$('stim-val').textContent=e.target.value+'%';syncRange(stimEl,+e.target.value,0,100);});
+  speedEl.addEventListener('input',e=>{speedMul=parseFloat(e.target.value);$('speed-val').textContent=e.target.value+'×';syncRange(speedEl,speedMul,1,8);});
+  stimEl.value=Math.round(stimulus*100);speedEl.value=speedMul;
+  $('stim-val').textContent=stimEl.value+'%';$('speed-val').textContent=speedEl.value+'×';
+  syncRange(stimEl,+stimEl.value,0,100);syncRange(speedEl,+speedEl.value,1,8);
+  document.querySelectorAll('#mode-seg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+  $('btn-reset').addEventListener('click',()=>{resetSim();clearTrails();});
+  $('btn-pause').addEventListener('click',togglePause);
+  window.addEventListener('keydown',e=>{
+    if(e.code==='Space'&&!(e.target instanceof HTMLElement&&e.target.matches('button,input,select,textarea,a'))){e.preventDefault();togglePause();}
+  });
+  $('btn-caffeine').addEventListener('click',startCaffeine);
+  $('btn-exercise').addEventListener('click',startExercise);
+  document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+
+  canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();canvasMouse={over:true,mx:e.clientX-r.left,my:e.clientY-r.top,cx:e.clientX,cy:e.clientY};uiTip=null;});
+  canvas.addEventListener('mouseleave',()=>{canvasMouse.over=false;hover=null;canvas.style.cursor='default';if(!uiTip)hideTip();});
+  canvas.addEventListener('pointerdown',e=>{   // su touch: tocca un elemento per leggere la spiegazione
+    if(e.pointerType!=='touch')return;
+    const r=canvas.getBoundingClientRect();canvasMouse={over:true,mx:e.clientX-r.left,my:e.clientY-r.top,cx:e.clientX,cy:e.clientY};
+    clearTimeout(touchTimer);touchTimer=setTimeout(()=>{canvasMouse.over=false;hover=null;hideTip();},4000);
+  });
+  document.addEventListener('mousemove',e=>{
+    const el=e.target instanceof Element?e.target.closest('[data-tip]'):null;
+    if(el){uiTip={key:el.dataset.tip,cx:e.clientX,cy:e.clientY};showTip(uiTip.key,e.clientX,e.clientY);}
+    else if(uiTip){uiTip=null;if(!canvasMouse.over)hideTip();}
+  });
+  window.addEventListener('blur',()=>{uiTip=null;canvasMouse.over=false;hover=null;hideTip();});
+}
