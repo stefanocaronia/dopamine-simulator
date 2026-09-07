@@ -85,4 +85,4 @@ The workflow in `.github/workflows/pages.yml` deploys the repository root on eve
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) describes the architecture, the conventions, how to test and what is still open.
 
 ## License
-Not chosen yet.
+[MIT](LICENSE) © 2026 Stefano Caronia. Use it, modify it, fork it, embed it in your own material: just keep the copyright and license notice, which is how the original author stays credited.

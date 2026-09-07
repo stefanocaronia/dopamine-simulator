@@ -85,7 +85,6 @@ Useful when driving the page from a script or from an AI assistant's browser pan
 Consistency check (node): load every dictionary and compare keys and `{placeholders}` against `it`; all languages must have the same 155 keys.
 
 ## 8. Roadmap and open items
-- [ ] Choose a license
 - [ ] Screenshots or a short GIF for the README (`docs/screenshots/`)
 - [ ] Native review of the machine-assisted translations (es, fr, de, pt, ru, zh, ja, ko, ar)
 - [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); tonic baseline release at zero stimulus; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights
