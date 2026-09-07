@@ -12,12 +12,12 @@ The simulation is a **didactic model**, not a quantitative one. Any change to th
 index.html          markup only; every visible string is injected via data-i18n attributes
 css/style.css       all styles: dark neon theme, toasts, tooltip, sidebar, responsive rules
 js/util.js          $, wall(), hexA()
-js/i18n.js          T(key, params), fmtN/fmt1, detectLang/applyI18n/setLang, LANGS, LOCALE
+js/i18n.js          T(key, params), fmtN/fmt1, detectLang/applyI18n/setLang, LANG_META (code, name, locale, dir), language menu
 js/model.js         parameters (MODES, constants, colors C), state, geometry, update() — no DOM access
 js/render.js        canvas: resizeCanvas(), sprite cache, trails buffer, all draw*() functions
 js/ui.js            toasts, tooltips (TIPS), hit-test and hover, HUD, controls (initUI)
 js/main.js          bootstrap and requestAnimationFrame loop
-i18n/it.js, en.js   dictionaries registered on window.I18N; it.js is the source of truth
+i18n/*.js           dictionaries registered on window.I18N (it, en, es, fr, de, pt, ru, zh, ja, ko, ar); it.js is the source of truth
 docs/fedelta-biologica.md   biological fidelity report (Italian)
 .github/workflows/pages.yml GitHub Pages deployment on every push to main
 ```
@@ -31,7 +31,7 @@ Load order in `index.html` matters: util → i18n dictionaries → i18n → mode
 - Rendering: glow through cached sprites (no per-particle `shadowBlur`); trails through a persistence canvas faded each frame with `destination-out` (long jumps leave a dot, not a line); a hover highlight; every label goes through `T()`.
 - Toasts: `buildToasts()` returns the list for the current frame; `renderToasts()` reconciles DOM nodes by key, so text updates do not re-trigger the entry animation. The reservoir trend uses a slow average (about 2 s), a value sampled once per second and a hysteresis state (`trendState`) to avoid flicker.
 - Tooltips: `TIPS[key]()` returns `{t, c, b}`; canvas elements are found by `hitTest(mx, my)`; UI elements carry `data-tip="key"`; on touch a tap shows the tip for 4 s.
-- i18n: every visible text goes through `T()`; strings may contain HTML (`<b>`, `<i class="c-*">`) and `{placeholders}`. Language resolution: `?lang=xx` → `localStorage` key `dopa.lang` → `navigator.language` → `it`.
+- i18n: every visible text goes through `T()`; strings may contain HTML (`<b>`, `<i class="c-*">`) and `{placeholders}`. Missing keys fall back to English, then Italian. Language resolution: `?lang=xx` → `localStorage` key `dopa.lang` → `navigator.language` → `it`. `applyI18n()` also sets `dir` (Arabic is right-to-left; the CSS uses logical properties such as `inset-inline-start` where it matters, and the canvas stays left-to-right).
 - Robustness: `resizeCanvas()` refuses zero-size layouts and retries on the next frame; each frame runs inside try/catch so one error cannot kill the loop.
 
 ## 4. Model parameters (js/model.js)
@@ -77,15 +77,17 @@ Useful when driving the page from a script or from an AI assistant's browser pan
 
 ## 7. Adding a language
 1. Copy `i18n/it.js` to `i18n/xx.js`, change `I18N.it` to `I18N.xx`, translate the values only. Keep keys, HTML tags, classes and `{placeholders}`.
-2. Add `<script src="i18n/xx.js"></script>` in `index.html` before `js/i18n.js`, and a button `<button data-lang="xx">XX</button>` in the header.
-3. Add `'xx'` to `LANGS` and a locale tag to `LOCALE` in `js/i18n.js` (used for number formatting).
-Suggested order: es, fr, de, pt.
+2. Add `<script src="i18n/xx.js"></script>` in `index.html` before `js/i18n.js`.
+3. Add `{code:'xx', name:'<native name>', locale:'xx-XX', dir:'ltr'|'rtl'}` to `LANG_META` in `js/i18n.js`. The locale drives number formatting (use `ar-u-nu-latn` style tags to keep Latin digits).
+4. Add a `<symbol id="flag-xx" viewBox="0 0 3 2">` to the SVG sprite at the top of `index.html` (simple shapes, no external images: the page must work offline).
+5. Run the consistency check below; the menu builds itself from `LANG_META`.
+
+Consistency check (node): load every dictionary and compare keys and `{placeholders}` against `it`; all languages must have the same 155 keys.
 
 ## 8. Roadmap and open items
-- [ ] Create the GitHub repository, enable Pages (Settings → Pages → Source: GitHub Actions), put the URL in README and in the `footer` strings
 - [ ] Choose a license
 - [ ] Screenshots or a short GIF for the README (`docs/screenshots/`)
-- [ ] Localization: es, fr, de, pt
+- [ ] Native review of the machine-assisted translations (es, fr, de, pt, ru, zh, ja, ko, ar)
 - [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); tonic baseline release at zero stimulus; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights
 - [ ] Scrolling refinements: variable-reward schedule, cue learning (anticipation bursts before the reward), a visible D2 sensitivity gauge
 - [ ] Optional: docked-vesicle animation on release; D1 receptors
@@ -97,5 +99,6 @@ Suggested order: es, fr, de, pt.
 - v3, 2026-09-07: split into modules, i18n (it/en), documentation, own repository
 - v3.1, 2026-09-07: biology corrections: caffeine as A2A antagonist, methylphenidate as DAT blocker, COMT weight reduced and declared a metaphor, MAO label, sleep debt grows with time awake
 - v3.2, 2026-09-07: perceived vs real sleep debt in the Sleep bar, caffeine crash toast, methylphenidate side effects and rebound, compulsive scrolling with D2 tolerance
+- v3.3, 2026-09-08: new header (logo, larger title, language dropdown with flags aligned to the content), grid layout, nine more languages (es, fr, de, pt, ru, zh, ja, ko, ar with RTL), footer with GitHub and coffee links, repository published on GitHub with Pages
 
 Earlier single-file versions can be retrieved with `git show <commit>:come-funziona-la-dopamina.html`.

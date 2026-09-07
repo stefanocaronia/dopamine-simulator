@@ -4,58 +4,114 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulazione Dopamina — ADHD vs Neurotipico</title>
-<meta name="description" content="Interactive, educational simulation of a dopamine synapse: ADHD vs neurotypical, stimulus, caffeine, exercise and sleep debt. Simulazione interattiva di una sinapsi dopaminergica.">
+<meta name="description" content="Interactive, educational simulation of a dopamine synapse: ADHD vs neurotypical, stimulus, caffeine, methylphenidate, exercise, sleep debt and compulsive scrolling. Simulazione interattiva di una sinapsi dopaminergica.">
+<meta property="og:title" content="Dopamine Simulator — ADHD vs Neurotypical">
+<meta property="og:description" content="Watch dopamine work, molecule by molecule: release, receptors, reuptake, recycling, tolerance.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a1422'/%3E%3Ccircle cx='32' cy='32' r='18' fill='%2300ff88' opacity='.25'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%2300ff88'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header>
-  <h1><span data-i18n="h.title"></span><small data-i18n="h.sub"></small></h1>
-  <div class="lang" role="group" aria-label="Language"><button data-lang="it">IT</button><button data-lang="en">EN</button></div>
-</header>
-<div id="app">
-  <div id="stage">
-    <div id="canvas-wrap">
-      <canvas id="c"></canvas>
-      <button id="btn-pause" data-tip="pause"><svg class="ic-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg><svg class="ic-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.6v10.8L13.4 8z"/></svg></button>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="flag-it" viewBox="0 0 3 2"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#CE2B37"/></symbol>
+    <symbol id="flag-en" viewBox="0 0 3 2"><rect width="3" height="2" fill="#012169"/><path d="M0 0L3 2M3 0L0 2" stroke="#fff" stroke-width=".5"/><path d="M0 0L3 2M3 0L0 2" stroke="#C8102E" stroke-width=".2"/><path d="M1.5 0V2M0 1H3" stroke="#fff" stroke-width=".6"/><path d="M1.5 0V2M0 1H3" stroke="#C8102E" stroke-width=".35"/></symbol>
+    <symbol id="flag-es" viewBox="0 0 3 2"><rect width="3" height="2" fill="#AA151B"/><rect y=".5" width="3" height="1" fill="#F1BF00"/></symbol>
+    <symbol id="flag-fr" viewBox="0 0 3 2"><rect width="1" height="2" fill="#0055A4"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#EF4135"/></symbol>
+    <symbol id="flag-de" viewBox="0 0 3 2"><rect width="3" height="2" fill="#000"/><rect y=".667" width="3" height=".667" fill="#DD0000"/><rect y="1.333" width="3" height=".667" fill="#FFCE00"/></symbol>
+    <symbol id="flag-pt" viewBox="0 0 3 2"><rect width="3" height="2" fill="#FF0000"/><rect width="1.2" height="2" fill="#006600"/><circle cx="1.2" cy="1" r=".42" fill="#FFE000"/><circle cx="1.2" cy="1" r=".24" fill="#FF0000" stroke="#fff" stroke-width=".06"/></symbol>
+    <symbol id="flag-ru" viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><rect y=".667" width="3" height=".667" fill="#0039A6"/><rect y="1.333" width="3" height=".667" fill="#D52B1E"/></symbol>
+    <symbol id="flag-zh" viewBox="0 0 3 2"><rect width="3" height="2" fill="#DE2910"/><polygon points="0.75,0.38 0.826,0.595 1.054,0.601 0.874,0.74 0.938,0.959 0.75,0.83 0.562,0.959 0.626,0.74 0.446,0.601 0.674,0.595" fill="#FFDE00"/></symbol>
+    <symbol id="flag-ja" viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><circle cx="1.5" cy="1" r=".6" fill="#BC002D"/></symbol>
+    <symbol id="flag-ko" viewBox="0 0 3 2"><rect width="3" height="2" fill="#fff"/><path d="M1 1a.5.5 0 0 1 1 0z" fill="#CD2E3A"/><path d="M1 1a.5.5 0 0 0 1 0z" fill="#0047A0"/><path d="M.32 .5l.36-.21M.38 .6l.36-.21M.44 .7l.36-.21M2.32 .29l.36 .21M2.26 .39l.36 .21M2.2 .49l.36 .21M.32 1.5l.36 .21M.38 1.4l.36 .21M.44 1.3l.36 .21M2.32 1.71l.36-.21M2.26 1.61l.36-.21M2.2 1.51l.36-.21" stroke="#000" stroke-width=".07"/></symbol>
+    <symbol id="flag-ar" viewBox="0 0 3 2"><rect width="3" height="2" fill="#006C35"/><path d="M.6 .85c.25-.3.5.15.75-.1s.5.15.75-.1.5.15.75-.1" fill="none" stroke="#fff" stroke-width=".13" stroke-linecap="round"/><path d="M.75 1.4H2.25" stroke="#fff" stroke-width=".12" stroke-linecap="round"/><path d="M2.25 1.4l.18-.1v.2z" fill="#fff"/></symbol>
+  </defs>
+</svg>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="./" aria-label="Dopamine Simulator">
+      <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <radialGradient id="lg-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#00ff88" stop-opacity=".38"/><stop offset="1" stop-color="#00ff88" stop-opacity="0"/></radialGradient>
+          <linearGradient id="lg-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#142842"/><stop offset="1" stop-color="#0a1422"/></linearGradient>
+        </defs>
+        <rect x="1" y="1" width="62" height="62" rx="16" fill="url(#lg-bg)" stroke="rgba(0,255,136,.35)" stroke-width="1.5"/>
+        <circle cx="27" cy="36" r="21" fill="url(#lg-glow)"/>
+        <g fill="none" stroke="#00ff88" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M26 24L36.4 30L36.4 42L26 48L15.6 42L15.6 30Z"/>
+          <circle cx="26" cy="36" r="6.5" stroke-width="1.4" opacity=".75"/>
+          <path d="M15.6 30L8 26M15.6 42L8 46"/>
+          <path d="M36.4 30L43 25L50 29L57 24"/>
+        </g>
+        <circle cx="8" cy="26" r="2.7" fill="#ff5c7a"/><circle cx="8" cy="46" r="2.7" fill="#ff5c7a"/>
+        <circle cx="57" cy="24" r="2.9" fill="#7ab8ff"/>
+      </svg></span>
+      <span class="brand-text"><h1 data-i18n="h.title"></h1><p class="sub" data-i18n="h.sub"></p></span>
+    </a>
+    <div class="lang" id="lang">
+      <button class="lang-btn" id="lang-btn" type="button" aria-haspopup="listbox" aria-expanded="false"><svg class="flag" aria-hidden="true"><use href="#flag-it"/></svg><span class="lang-code">IT</span><span class="chev" aria-hidden="true">⌄</span></button>
+      <ul class="lang-menu" id="lang-menu" role="listbox" hidden></ul>
     </div>
-    <div id="toasts"></div>
-  </div>
-  <aside id="sidebar">
-    <div class="card">
-      <h2 data-i18n="card.brain"></h2>
-      <div class="seg" id="mode-seg"><button class="adhd is-on" data-mode="adhd" data-tip="mode-adhd" data-i18n="mode.adhd"></button><button class="norm" data-mode="normal" data-tip="mode-normal" data-i18n="mode.normal"></button></div>
-      <div class="ctrl"><div class="lbl" data-tip="stimulus"><span data-i18n="ctl.stimulus"></span><span class="val" id="stim-val">10%</span></div><input type="range" id="stimulus" min="0" max="100" value="10"></div>
-      <div class="ctrl"><div class="lbl" data-tip="speed"><span data-i18n="ctl.speed"></span><span class="val" id="speed-val">2×</span></div><input type="range" id="speed" min="1" max="8" value="2" step="0.5"></div>
-    </div>
-    <div class="card">
-      <h2 data-i18n="card.actions"></h2>
-      <button class="pu" id="btn-caffeine" data-tip="caffeine"><span class="fill caff" id="caff-fill"></span><span class="in" data-i18n="btn.caffeine"></span></button>
-      <button class="pu" id="btn-mph" data-tip="mph"><span class="fill mph" id="mph-fill"></span><span class="in" data-i18n="btn.mph"></span></button>
-      <button class="pu" id="btn-exercise" data-tip="exercise"><span class="fill exer" id="exer-fill"></span><span class="in" data-i18n="btn.exercise"></span></button>
-      <button class="pu" id="btn-scroll" data-tip="scroll"><span class="fill scroll" id="scroll-fill"></span><span class="in" data-i18n="btn.scroll"></span></button>
-      <button class="pu" id="btn-reset" data-tip="sleep"><span class="fill sleep" id="sleep-fill"></span><span class="fill sleep-mask" id="sleep-mask"></span><span class="in" data-i18n="btn.sleep"></span></button>
-      <div class="meter" data-tip="serbatoio"><span class="fill" id="serbatoio-fill"></span><span class="in"><span data-i18n="meter.reservoir"></span><b id="serbatoio-pct">100%</b></span></div>
-    </div>
-    <div class="card">
-      <h2 data-i18n="card.legend"></h2>
-      <div class="legend">
-        <div class="leg" data-tip="particle"><span class="dot" style="background:#00ff88;color:#00ff88"></span><span data-i18n="leg.dopa"></span></div>
-        <div class="leg" data-tip="dead"><span class="dot" style="background:#ff3355;color:#ff3355"></span><span data-i18n="leg.dead"></span></div>
-        <div class="leg" data-tip="dat1"><span class="gl-dat"></span><span data-i18n="leg.dat1"></span></div>
-        <div class="leg" data-tip="comt"><span class="gl-comt"></span><span data-i18n="leg.comt"></span></div>
-        <div class="leg" data-tip="vmat2"><span class="gl-vmat"></span><span data-i18n="leg.vmat2"></span></div>
-        <div class="leg" data-tip="maob"><span class="gl-mao"></span><span data-i18n="leg.maob"></span></div>
-        <div class="leg" data-tip="d2"><span class="gl-d2"></span><span data-i18n="leg.d2"></span></div>
-        <div class="leg" data-tip="post"><span class="dot" style="background:#00e5ff;color:#00e5ff"></span><span data-i18n="leg.active"></span></div>
+  </header>
+  <main id="app">
+    <div id="stage">
+      <div id="canvas-wrap">
+        <canvas id="c"></canvas>
+        <button id="btn-pause" data-tip="pause"><svg class="ic-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="3.6" height="11" rx="1"/><rect x="9.4" y="2.5" width="3.6" height="11" rx="1"/></svg><svg class="ic-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.6v10.8L13.4 8z"/></svg></button>
       </div>
+      <div id="toasts"></div>
     </div>
-  </aside>
+    <aside id="sidebar">
+      <div class="card">
+        <h2 data-i18n="card.brain"></h2>
+        <div class="seg" id="mode-seg"><button class="adhd is-on" data-mode="adhd" data-tip="mode-adhd" data-i18n="mode.adhd"></button><button class="norm" data-mode="normal" data-tip="mode-normal" data-i18n="mode.normal"></button></div>
+        <div class="ctrl"><div class="lbl" data-tip="stimulus"><span data-i18n="ctl.stimulus"></span><span class="val" id="stim-val">10%</span></div><input type="range" id="stimulus" min="0" max="100" value="10"></div>
+        <div class="ctrl"><div class="lbl" data-tip="speed"><span data-i18n="ctl.speed"></span><span class="val" id="speed-val">2×</span></div><input type="range" id="speed" min="1" max="8" value="2" step="0.5"></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="card.actions"></h2>
+        <button class="pu" id="btn-caffeine" data-tip="caffeine"><span class="fill caff" id="caff-fill"></span><span class="in" data-i18n="btn.caffeine"></span></button>
+        <button class="pu" id="btn-mph" data-tip="mph"><span class="fill mph" id="mph-fill"></span><span class="in" data-i18n="btn.mph"></span></button>
+        <button class="pu" id="btn-exercise" data-tip="exercise"><span class="fill exer" id="exer-fill"></span><span class="in" data-i18n="btn.exercise"></span></button>
+        <button class="pu" id="btn-scroll" data-tip="scroll"><span class="fill scroll" id="scroll-fill"></span><span class="in" data-i18n="btn.scroll"></span></button>
+        <button class="pu" id="btn-reset" data-tip="sleep"><span class="fill sleep" id="sleep-fill"></span><span class="fill sleep-mask" id="sleep-mask"></span><span class="in" data-i18n="btn.sleep"></span></button>
+        <div class="meter" data-tip="serbatoio"><span class="fill" id="serbatoio-fill"></span><span class="in"><span data-i18n="meter.reservoir"></span><b id="serbatoio-pct">100%</b></span></div>
+      </div>
+      <div class="card">
+        <h2 data-i18n="card.legend"></h2>
+        <div class="legend">
+          <div class="leg" data-tip="particle"><span class="dot" style="background:#00ff88;color:#00ff88"></span><span data-i18n="leg.dopa"></span></div>
+          <div class="leg" data-tip="dead"><span class="dot" style="background:#ff3355;color:#ff3355"></span><span data-i18n="leg.dead"></span></div>
+          <div class="leg" data-tip="dat1"><span class="gl-dat"></span><span data-i18n="leg.dat1"></span></div>
+          <div class="leg" data-tip="comt"><span class="gl-comt"></span><span data-i18n="leg.comt"></span></div>
+          <div class="leg" data-tip="vmat2"><span class="gl-vmat"></span><span data-i18n="leg.vmat2"></span></div>
+          <div class="leg" data-tip="maob"><span class="gl-mao"></span><span data-i18n="leg.maob"></span></div>
+          <div class="leg" data-tip="d2"><span class="gl-d2"></span><span data-i18n="leg.d2"></span></div>
+          <div class="leg" data-tip="post"><span class="dot" style="background:#00e5ff;color:#00e5ff"></span><span data-i18n="leg.active"></span></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <footer class="credits">
+    <span data-i18n="footer"></span>
+    <span class="sep">·</span>
+    <a href="https://github.com/stefanocaronia/dopamine-simulator" target="_blank" rel="noopener"><span data-i18n="footer.github"></span> ↗</a>
+    <span class="sep">·</span>
+    <a href="https://www.paypal.com/paypalme/stefanocaronia" target="_blank" rel="noopener">☕ <span data-i18n="footer.coffee"></span></a>
+  </footer>
 </div>
-<footer class="credits" data-i18n="footer"></footer>
 <div id="tip"></div>
 <script src="js/util.js"></script>
 <script src="i18n/it.js"></script>
 <script src="i18n/en.js"></script>
+<script src="i18n/es.js"></script>
+<script src="i18n/fr.js"></script>
+<script src="i18n/de.js"></script>
+<script src="i18n/pt.js"></script>
+<script src="i18n/ru.js"></script>
+<script src="i18n/zh.js"></script>
+<script src="i18n/ja.js"></script>
+<script src="i18n/ko.js"></script>
+<script src="i18n/ar.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/model.js"></script>
 <script src="js/render.js"></script>

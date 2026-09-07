@@ -2,7 +2,7 @@
 
 An interactive, educational simulation of a dopamine synapse. Watch vesicles fuse, dopamine molecules diffuse across the cleft, bind D2 receptors, get pulled back by DAT1 transporters, recycled by VMAT2 or destroyed by COMT and MAO. Flip between an **ADHD** and a **neurotypical** synapse, play with stimulus, caffeine, methylphenidate, exercise and sleep debt, and read what is happening in real time.
 
-**Live demo:** `https://<user>.github.io/dopamine-simulator/` *(to be enabled, see [Publishing](#publishing-on-github-pages))*
+**Live demo:** https://stefanocaronia.github.io/dopamine-simulator/
 
 > This is a didactic model, not a quantitative one. Everything is slowed down about 100× to be visible and several mechanisms are simplified on purpose. The biological fidelity notes, written for the authors and for the biologists reviewing the model, are in [docs/fedelta-biologica.md](docs/fedelta-biologica.md) (Italian).
 
@@ -15,7 +15,7 @@ An interactive, educational simulation of a dopamine synapse. Watch vesicles fus
 - Compulsive scrolling: cheap cue-triggered dopamine bursts that light the neurons up while D2 receptors visibly disappear from the membrane (tolerance), then recover slowly once you stop
 - Live "state toasts" explaining what is going on (brain mode, stimulus level, reservoir trend, interventions, sleep debt, depletion, pause)
 - A colored tooltip on every element, on the canvas and in the controls, with live numbers
-- Italian and English UI, auto-detected and switchable (`?lang=en`)
+- Eleven UI languages (Italian, English, Spanish, French, German, Portuguese, Russian, Chinese, Japanese, Korean, Arabic with right-to-left layout), auto-detected and switchable from the header or with `?lang=xx`. Italian is the source; the others are machine-assisted translations and welcome native review
 - No build step, no dependencies: plain HTML, CSS and JavaScript. Works from a double-click on `index.html`
 
 ## Controls
@@ -76,10 +76,10 @@ docs/               development guide and biological fidelity notes
 ```
 
 ## Localization
-Italian is the source language. To add a language, copy `i18n/it.js` to `i18n/xx.js`, translate the values (keep keys, HTML tags and `{placeholders}`), include the file in `index.html`, add a button in the header and the code in `LANGS` in `js/i18n.js`. Details in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Italian is the source language. To add a language, copy `i18n/it.js` to `i18n/xx.js`, translate the values (keep keys, HTML tags and `{placeholders}`), include the file in `index.html`, add an entry to `LANG_META` in `js/i18n.js` and a `#flag-xx` symbol to the SVG sprite at the top of `index.html`. Details in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Corrections to the existing translations are very welcome.
 
 ## Publishing on GitHub Pages
-The workflow in `.github/workflows/pages.yml` deploys the repository root on every push to `main`. One-time setup: Settings → Pages → Source: **GitHub Actions**. Then put the URL at the top of this file and in the `footer` string of the dictionaries.
+The workflow in `.github/workflows/pages.yml` deploys the repository root on every push to `main` (Settings → Pages → Source: **GitHub Actions**).
 
 ## Contributing
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) describes the architecture, the conventions, how to test and what is still open.

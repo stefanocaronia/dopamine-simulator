@@ -166,7 +166,7 @@ function updateHUD(){
   const perc=perceivedDebt()*100,real=sleepDebt*100;
   setWidth('sleep-fill',perc.toFixed(1)+'%');
   const mk=$('sleep-mask'),ml=perc.toFixed(1)+'%',mw=Math.max(0,real-perc).toFixed(1)+'%';
-  if(hudCache.ml!==ml){hudCache.ml=ml;mk.style.left=ml;}
+  if(hudCache.ml!==ml){hudCache.ml=ml;mk.style.insetInlineStart=ml;}
   if(hudCache.mw!==mw){hudCache.mw=mw;mk.style.width=mw;}
   setWidth('scroll-fill',scrollActive?'100%':'0%');
   if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
@@ -192,7 +192,14 @@ function initUI(){
   $('btn-mph').addEventListener('click',startMph);
   $('btn-scroll').addEventListener('click',toggleScroll);
   $('btn-exercise').addEventListener('click',startExercise);
-  document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+  // Selettore lingua a tendina
+  buildLangMenu();
+  const lb=$('lang-btn'),lm=$('lang-menu');
+  const closeMenu=()=>{lm.hidden=true;lb.setAttribute('aria-expanded','false');};
+  lb.addEventListener('click',e=>{e.stopPropagation();const open=lm.hidden;lm.hidden=!open;lb.setAttribute('aria-expanded',String(open));});
+  lm.addEventListener('click',e=>{const li=e.target.closest('li[data-lang]');if(li){setLang(li.dataset.lang);closeMenu();}});
+  document.addEventListener('click',e=>{if(!(e.target instanceof Element&&e.target.closest('#lang')))closeMenu();});
+  window.addEventListener('keydown',e=>{if(e.code==='Escape')closeMenu();});
 
   canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();canvasMouse={over:true,mx:e.clientX-r.left,my:e.clientY-r.top,cx:e.clientX,cy:e.clientY};uiTip=null;});
   canvas.addEventListener('mouseleave',()=>{canvasMouse.over=false;hover=null;canvas.style.cursor='default';if(!uiTip)hideTip();});
