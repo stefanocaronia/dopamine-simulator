@@ -4,21 +4,28 @@
    Ogni modifica alla biologia va annotata in docs/fedelta-biologica.md. */
 
 // ───────────────────────── Parametri del modello ─────────────────────────
+// comtRate: nello striato la COMT pesa poco (è per lo più intracellulare); qui resta come metafora a peso ridotto
 const MODES={
-  adhd:  {d2Count:5, dat1Speed:2.0,dat1Count:5,comtRate:0.04, vmat2Ratio:0.55,snap25Eff:1.0},
-  normal:{d2Count:12,dat1Speed:0.7,dat1Count:3,comtRate:0.015,vmat2Ratio:0.75,snap25Eff:1.0}
+  adhd:  {d2Count:5, dat1Speed:2.0,dat1Count:5,comtRate:0.012,vmat2Ratio:0.55,snap25Eff:1.0},
+  normal:{d2Count:12,dat1Speed:0.7,dat1Count:3,comtRate:0.005,vmat2Ratio:0.75,snap25Eff:1.0}
 };
 const MAX_VES=100,MAX_P=500,BIND_DIST=22;
 const ACT_THRESHOLD=0.8,SIGNAL_PER_BIND=0.5,SIGNAL_HALF_LIFE=0.6;
-const CAFF_DUR=25,EXER_DUR=12;
-const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',exer:'#3cb371',sleep:'#8e6fd1',stimLow:'#7fb8ff',stimHigh:'#ffb347'};
+const CAFF_DUR=25,MPH_DUR=30,EXER_DUR=12;
+// Caffeina = antagonista A2A: soglia dei D2 più bassa, rilascio un po' più alto, dimezza la penalità del debito di sonno
+const CAFF_THRESH=0.8,CAFF_RELEASE=1.10,CAFF_DEBT_MASK=0.5;
+// Metilfenidato = blocco dei DAT1: quota di ricaptazioni che fallisce, rallentamento dei trasportatori
+const MPH_BLOCK=0.85,MPH_SLOW=0.3;
+// Debito di sonno: cresce con il tempo di veglia (adenosina), non con lo stimolo. Pieno in ~3 minuti simulati
+const SLEEP_DEBT_RATE=0.0055;
+const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',stimLow:'#7fb8ff',stimHigh:'#ffb347'};
 
 // ───────────────────────── Stato ─────────────────────────
 let mode='adhd',stimulus=0.10,speedMul=2,paused=false;
 let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=[],comts=[];
 let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
-let caffeineTimer=0,caffeineActive=false,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
+let caffeineTimer=0,caffeineActive=false,mphTimer=0,mphActive=false,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
 let rateWindow=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0;
 let relAccum=0,now=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
@@ -65,7 +72,7 @@ function rebuildAll(){
   const nC=3,gap=12,top=12,bottom=H-26,nH=(bottom-top-gap*(nC-1))/nC;
   for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false});
   rebuildReceptors();rebuildDat1();
-  comts=[];for(let i=0;i<5;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28});
+  comts=[];for(let i=0;i<3;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28});
   pops=[];pulses=[];apPulses=[];
 }
 
@@ -106,7 +113,11 @@ function spawn(x,y){
   return p;
 }
 
-function thresholdNow(){return ACT_THRESHOLD*(1+sleepDebt*1.5);}
+// Soglia di attivazione: sale con il debito di sonno; la caffeina la abbassa e maschera metà della penalità
+function thresholdNow(){
+  const debtPenalty=1.5*sleepDebt*(caffeineActive?CAFF_DEBT_MASK:1);
+  return ACT_THRESHOLD*(1+debtPenalty)*(caffeineActive?CAFF_THRESH:1);
+}
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
@@ -117,18 +128,19 @@ function update(dt){
   now+=dt;
 
   if(caffeineTimer>0){caffeineTimer-=dt;if(caffeineTimer<=0){caffeineTimer=0;caffeineActive=false;}}
+  if(mphTimer>0){mphTimer-=dt;if(mphTimer<=0){mphTimer=0;mphActive=false;}}
   if(exerciseTimer>0){
     exerciseTimer-=dt;
     vesCount=Math.min(MAX_VES,vesCount+(0.5-sleepDebt*0.3)*sdt);   // l'esercizio accelera la sintesi, meno se c'è debito di sonno
     if(exerciseTimer<=0){exerciseTimer=0;exerciseActive=false;}
   }
-  // Debito di sonno: cresce con lo stimolo (a stimolo max si riempie in ~30 s, a zero in ~3 min)
-  sleepDebt=Math.min(1,sleepDebt+(0.0015+stimulus*0.007)*sdt);
+  // Debito di sonno: cresce con il tempo di veglia, indipendentemente dallo stimolo
+  sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*sdt);
   if(sleepToastTimer>0)sleepToastTimer-=dt;
 
-  // Rilascio: l'esercizio aggiunge un boost dolce, ridotto dal debito di sonno
+  // Rilascio: l'esercizio aggiunge un boost dolce (ridotto dal debito di sonno), la caffeina lo alza un po'
   const exerciseBoost=exerciseActive?15-sleepDebt*10:0;
-  const rate=(stimulus*30+exerciseBoost)*cfg.snap25Eff;
+  const rate=(stimulus*30+exerciseBoost)*cfg.snap25Eff*(caffeineActive?CAFF_RELEASE:1);
   relAccum+=rate*sdt;
   while(relAccum>=1){
     relAccum-=1;
@@ -173,8 +185,7 @@ function update(dt){
       const dat1Zone=cleftLeft+3+cfg.dat1Speed*4;
       if(p.x<dat1Zone&&p.age>0.15){
         const baseProb=0.7+cfg.dat1Speed*0.12;   // ADHD ≈0.94, Neurotipico ≈0.78
-        let reuptakeProb=baseProb;
-        if(caffeineActive){const blockPower=0.85-sleepDebt*0.4;reuptakeProb=baseProb*(1-blockPower);}
+        const reuptakeProb=mphActive?baseProb*(1-MPH_BLOCK):baseProb;   // il metilfenidato blocca i DAT1
         if(Math.random()<reuptakeProb){
           p.state='reuptake';p.target=reuptakeTarget(p.y);rateReabCount++;
         }else{
@@ -242,19 +253,19 @@ function update(dt){
   trendTimer+=dt;
   if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();}
 
-  // Trasportatori DAT1: agganciano le particelle e le riportano dentro (la caffeina li rallenta e li fa fallire)
+  // Trasportatori DAT1: agganciano le particelle e le riportano dentro (il metilfenidato li rallenta e li fa fallire)
   for(const d of dat1s){
     if(d.state==='idle'){let best=null,bestD=Infinity;
       for(const p of particles){if(p.state!=='free'||p.immune>0)continue;const dist=Math.hypot(p.x-d.x,p.y-d.y);if(dist<bestD&&p.x>d.x-10&&dist<CLEFT.w*2){bestD=dist;best=p;}}
       if(best){d.target=best;d.state='reaching';d.timer=0;}
     }
     if(d.state==='reaching'){
-      const spd=caffeineActive?cfg.dat1Speed*0.3:cfg.dat1Speed;
+      const spd=mphActive?cfg.dat1Speed*MPH_SLOW:cfg.dat1Speed;
       d.timer+=sdt*spd;d.arm=Math.min(1,d.timer*2);
       if(d.target&&d.target.state!=='free'){d.state='idle';d.arm=0;d.target=null;continue;}
       if(d.arm>=1&&d.target){
-        const caffFail=caffeineActive&&Math.random()<0.85;
-        if(caffFail){d.state='idle';d.arm=0;d.target=null;}
+        const mphFail=mphActive&&Math.random()<MPH_BLOCK;
+        if(mphFail){d.state='idle';d.arm=0;d.target=null;}
         else{d.target.state='reuptake';d.target.target=reuptakeTarget(d.y);d.state='pulling';d.timer=0;rateReabCount++;}
       }
     }
@@ -309,5 +320,6 @@ function resetSim(){
   rebuildAll();
 }
 function startCaffeine(){if(caffeineActive)return;caffeineTimer=CAFF_DUR;caffeineActive=true;}
+function startMph(){if(mphActive)return;mphTimer=MPH_DUR;mphActive=true;}
 function startExercise(){if(exerciseActive)return;exerciseTimer=EXER_DUR;exerciseActive=true;}
 function togglePause(){paused=!paused;}

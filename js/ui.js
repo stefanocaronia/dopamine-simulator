@@ -25,7 +25,8 @@ function buildToasts(){
   list.push(stimToast());
   if(sleepToastTimer>0)list.push({key:'on',c:C.dopa,t:T('t.on.t'),b:T('t.on.b')});
   if(caffeineActive)list.push({key:'caff',c:C.caff,t:T('t.caff.t'),s:T('u.sec',{n:Math.ceil(caffeineTimer)}),
-    b:depleted?T('t.caff.depleted'):T('t.caff.b')+(sleepDebt>0.3?T('t.caff.sleep',{block:Math.round((0.85-sleepDebt*0.4)*100)}):'')});
+    b:depleted?T('t.caff.depleted'):T('t.caff.b')+(sleepDebt>0.3?T('t.caff.sleep'):'')});
+  if(mphActive)list.push({key:'mph',c:C.mph,t:T('t.mph.t'),s:T('u.sec',{n:Math.ceil(mphTimer)}),b:depleted?T('t.mph.depleted'):T('t.mph.b')});
   if(exerciseActive)list.push({key:'exer',c:C.exer,t:T('t.exer.t'),s:T('u.sec',{n:Math.ceil(exerciseTimer)}),
     b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
   if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:Math.round(sleepDebt*100)+'%',b:T('t.sleep.b',{thr:Math.round(sleepDebt*150)})});
@@ -61,7 +62,7 @@ function renderToasts(){
 // ───────────────────────── Tooltip ─────────────────────────
 const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.active,gauge:C.active,particle:C.dopa,dead:C.dead,rates:C.dopa};
 const TIPS={
-  dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,slowed:caffeineActive?T('tip.dat1.slowed'):''})};},
+  dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
   comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt})}),
   d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds})}),
   vmat2:()=>({t:T('tip.vmat2.t'),c:C.vmat,b:T('tip.vmat2.b',{ratio:Math.round(MODES[mode].vmat2Ratio*100),rec:stats.recycled})}),
@@ -85,6 +86,7 @@ const TIPS={
   stimulus:()=>({t:T('tip.stimulus.t'),c:C.dopa,b:T('tip.stimulus.b')}),
   speed:()=>({t:T('tip.speed.t'),c:C.active,b:T('tip.speed.b')}),
   caffeine:()=>({t:T('tip.caffeine.t'),c:C.caff,b:T('tip.caffeine.b')}),
+  mph:()=>({t:T('tip.mph.t'),c:C.mph,b:T('tip.mph.b')}),
   exercise:()=>({t:T('tip.exercise.t'),c:C.exer,b:T('tip.exercise.b')}),
   sleep:()=>({t:T('tip.sleep.t'),c:C.sleep,b:T('tip.sleep.b')}),
   serbatoio:()=>({t:T('tip.serbatoio.t'),c:C.dopa,b:T('tip.serbatoio.b',{trend:trendText()})}),
@@ -149,6 +151,7 @@ function updateHUD(){
   const pct=Math.round(vesCount/MAX_VES*100);
   setWidth('serbatoio-fill',pct+'%');setText('serbatoio-pct',pct+'%');
   setWidth('caff-fill',(caffeineActive?Math.max(0,caffeineTimer/CAFF_DUR*100).toFixed(1):0)+'%');
+  setWidth('mph-fill',(mphActive?Math.max(0,mphTimer/MPH_DUR*100).toFixed(1):0)+'%');
   setWidth('exer-fill',(exerciseActive?Math.max(0,exerciseTimer/EXER_DUR*100).toFixed(1):0)+'%');
   setWidth('sleep-fill',(sleepDebt*100).toFixed(1)+'%');
   if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
@@ -171,6 +174,7 @@ function initUI(){
     if(e.code==='Space'&&!(e.target instanceof HTMLElement&&e.target.matches('button,input,select,textarea,a'))){e.preventDefault();togglePause();}
   });
   $('btn-caffeine').addEventListener('click',startCaffeine);
+  $('btn-mph').addEventListener('click',startMph);
   $('btn-exercise').addEventListener('click',startExercise);
   document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
 

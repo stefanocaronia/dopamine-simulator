@@ -1,5 +1,9 @@
-# Editor / tooling
+# AI assistant instruction files and tooling (kept local on purpose)
+CLAUDE.md
+AGENTS.md
 .claude/
+
+# Editors
 .vscode/
 .idea/
 *.swp
