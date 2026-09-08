@@ -61,6 +61,7 @@ I18N.es={
   't.trend.up':'La <i class="c-dopa">reserva</i> se <b>recarga</b> (<b>+{tr}%/s</b>).',
   't.trend.hold':'La <i class="c-dopa">reserva</i> <b>aguanta</b> ({tr}%/s).',
   'u.receptive':'neuronas receptivas el <b>{p}%</b> del tiempo',
+  'u.onfor':'activo desde hace {n} s',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',
   't.stim.none.t':'😴 Estímulo casi nulo',

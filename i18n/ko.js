@@ -63,6 +63,7 @@ I18N.ko={
   't.trend.up':'<i class="c-dopa">저장량</i>이 <b>회복 중</b>입니다 (<b>+{tr}%/초</b>).',
   't.trend.hold':'<i class="c-dopa">저장량</i>이 <b>유지</b>됩니다 ({tr}%/초).',
   'u.receptive':'뉴런이 반응 준비 상태인 시간: <b>{p}%</b>',
+  'u.onfor':'켠 지 {n}초',
   'u.sec':'{n}초',
   'u.d2':'D2 {rec}/{full}',
   't.stim.none.t':'😴 자극이 거의 없음',

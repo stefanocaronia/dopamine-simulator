@@ -52,7 +52,7 @@ let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=
 let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
 let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
-let scrollActive=false,scrollAccum=0,burstLeft=0,d2Sens=1,effD2=null;   // d2Sens: sensibilità/densità dei D2 (1 = normale)
+let scrollActive=false,scrollAccum=0,burstLeft=0,scrollOnAt=0,d2Sens=1,effD2=null;   // scrollOnAt: istante (now) dell'accensione; d2Sens: sensibilità/densità dei D2 (1 = normale)
 let age=AGE_REF;
 let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
 let rateWindow=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0;
@@ -397,11 +397,13 @@ function resetSim(){
   d2Sens=Math.min(1,d2Sens+SLEEP_TOL_RECOVER);effD2=null;
   rebuildAll();
 }
-function startCaffeine(){if(caffeineActive)return;caffeineTimer=CAFF_DUR;caffeineActive=true;caffEndTimer=0;}
-function startMph(){if(mphActive)return;mphTimer=MPH_DUR;mphActive=true;mphRebound=0;}
-function toggleScroll(){scrollActive=!scrollActive;if(!scrollActive)burstLeft=0;}
-// Una dose di sostanza: parte l'effetto; i D2 si consumano gradualmente mentre dura (vedi SUBST[k].des in update)
-function startSubst(k){const s=subst[k];if(!s||s.t>0)return;s.t=SUBST[k].dur;s.after=0;}
+// Ridosaggio: un clic mentre l'effetto è attivo lo riporta alla durata piena (un altro caffè, un'altra sigaretta)
+function startCaffeine(){caffeineTimer=CAFF_DUR;caffeineActive=true;caffEndTimer=0;}
+function startMph(){mphTimer=MPH_DUR;mphActive=true;mphRebound=0;}
+function toggleScroll(){scrollActive=!scrollActive;if(scrollActive)scrollOnAt=now;else burstLeft=0;}
+// Una dose di sostanza: parte l'effetto; i D2 si consumano gradualmente mentre dura (vedi SUBST[k].des in update).
+// Se l'effetto è già attivo, la dose lo riporta alla durata piena e annulla l'effetto successivo in attesa
+function startSubst(k){const s=subst[k];if(!s)return;s.t=SUBST[k].dur;s.after=0;}
 function setAge(a){age=Math.max(AGE_MIN,Math.min(AGE_MAX,Math.round(a)));effD2=null;}
-function startExercise(){if(exerciseActive)return;exerciseTimer=EXER_DUR;exerciseActive=true;}
+function startExercise(){exerciseTimer=EXER_DUR;exerciseActive=true;}
 function togglePause(){paused=!paused;}

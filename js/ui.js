@@ -43,7 +43,7 @@ function buildToasts(){
   if(exerciseActive)list.push({key:'exer',c:C.exer,t:T('t.exer.t'),s:T('u.sec',{n:Math.ceil(exerciseTimer)}),
     b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
   const sens=Math.round(d2Sens*100),D2={sens,rec:effectiveD2(),full:baseD2()},d2s=T('u.d2',{rec:D2.rec,full:D2.full});
-  if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:d2s,b:T('t.scroll.b',D2)});
+  if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:T('u.onfor',{n:Math.max(0,Math.round(now-scrollOnAt))})+' · '+d2s,b:T('t.scroll.b',D2)});
   else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:d2s,b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((0.92-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
   if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:caffeineActive?real+'% → '+perc+'%':real+'%',
     b:T('t.sleep.b',{thr:Math.round(perceivedDebt()*150)})+(caffeineActive?T('t.sleep.masked',{perc}):T('t.sleep.hint'))});
@@ -186,6 +186,7 @@ function updateHUD(){
   if(hudCache.ml!==ml){hudCache.ml=ml;mk.style.insetInlineStart=ml;}
   if(hudCache.mw!==mw){hudCache.mw=mw;mk.style.width=mw;}
   setWidth('scroll-fill',scrollActive?'100%':'0%');
+  if(hudCache.scrollOn!==scrollActive){hudCache.scrollOn=scrollActive;const b=$('btn-scroll');b.classList.toggle('on',scrollActive);b.setAttribute('aria-pressed',String(scrollActive));}
   for(const k of ['nic','can','alc','coc'])setWidth(k+'-fill',(subst[k].t>0?(subst[k].t/SUBST[k].dur*100).toFixed(1):0)+'%');
   // Barra dei recettori D2: fondo scala = D2_MAX (neurotipico a 5 anni), tacca = base per cervello ed età, testo = recettori per neurone
   const eff=effectiveD2(),base=baseD2();

@@ -63,6 +63,7 @@ I18N.ar={
   't.trend.up':'<i class="c-dopa">المخزون</i> <b>يتجدّد</b> (<b>+{tr}%/ث</b>).',
   't.trend.hold':'<i class="c-dopa">المخزون</i> <b>ثابت</b> ({tr}%/ث).',
   'u.receptive':'الخلايا العصبية متقبِّلة <b>{p}%</b> من الوقت',
+  'u.onfor':'مضاء منذ {n} ث',
   'u.sec':'{n} ث',
   'u.d2':'D2 {rec}/{full}',
   't.stim.none.t':'😴 محفّز شبه معدوم',

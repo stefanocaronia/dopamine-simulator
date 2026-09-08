@@ -61,6 +61,7 @@ I18N.de={
   't.trend.up':'Die <i class="c-dopa">Reserve</i> <b>füllt sich</b> (<b>+{tr} %/s</b>).',
   't.trend.hold':'Die <i class="c-dopa">Reserve</i> <b>hält</b> ({tr} %/s).',
   'u.receptive':'Neuronen <b>{p} %</b> der Zeit empfänglich',
+  'u.onfor':'seit {n} s an',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',
   't.stim.none.t':'😴 Fast kein Reiz',

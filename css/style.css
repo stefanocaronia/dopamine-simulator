@@ -24,6 +24,14 @@ h1{font-size:clamp(1.55rem,2.6vw,2.35rem);line-height:1.08;font-weight:800;lette
 .kid-btn:hover{border-color:rgba(127,255,200,.5);color:var(--text)}
 .kid-btn[aria-pressed=true]{background:rgba(127,255,200,.14);border-color:rgba(127,255,200,.6);color:#7fffc8}
 .kid-btn .ki{font-size:1rem;line-height:1}
+/* Levetta dentro il pulsante delle ricompense facili: è un interruttore, non una dose (si clicca comunque tutto il pulsante) */
+.pu .sw{position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);width:34px;height:18px;border-radius:9px;background:#1b2a3c;border:1px solid var(--line-2);pointer-events:none;transition:background .2s,border-color .2s}
+.pu .sw .knob{position:absolute;top:2px;inset-inline-start:2px;width:12px;height:12px;border-radius:50%;background:#8697ad;transition:inset-inline-start .2s,background .2s}
+.pu.on .sw{background:rgba(158,203,255,.35);border-color:rgba(158,203,255,.7)}
+.pu.on .sw .knob{inset-inline-start:18px;background:#9ecbff;box-shadow:0 0 8px rgba(158,203,255,.8)}
+#btn-scroll .in{padding-inline-end:46px}
+/* Icona della cannabis: una foglia palmata vera al posto dell'emoji generica (che resta nel testo, invisibile) */
+#btn-can .in i{color:transparent;background:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cg%20transform='translate(12%2021)'%20fill='%237fd66a'%20stroke='%233f8f3a'%20stroke-width='.5'%20stroke-linejoin='round'%3E%3Cpath%20d='M0%200C1.7%20-3.0%201.7%20-7.8%200%20-10C-1.7%20-7.8%20-1.7%20-3.0%200%200Z'%20transform='rotate(-72)'/%3E%3Cpath%20d='M0%200C2.4%20-4.2%202.4%20-10.9%200%20-14C-2.4%20-10.9%20-2.4%20-4.2%200%200Z'%20transform='rotate(-48)'/%3E%3Cpath%20d='M0%200C2.9%20-5.1%202.9%20-13.3%200%20-17C-2.9%20-13.3%20-2.9%20-5.1%200%200Z'%20transform='rotate(-24)'/%3E%3Cpath%20d='M0%200C3.2%20-5.7%203.2%20-14.8%200%20-19C-3.2%20-14.8%20-3.2%20-5.7%200%200Z'%20transform='rotate(0)'/%3E%3Cpath%20d='M0%200C2.9%20-5.1%202.9%20-13.3%200%20-17C-2.9%20-13.3%20-2.9%20-5.1%200%200Z'%20transform='rotate(24)'/%3E%3Cpath%20d='M0%200C2.4%20-4.2%202.4%20-10.9%200%20-14C-2.4%20-10.9%20-2.4%20-4.2%200%200Z'%20transform='rotate(48)'/%3E%3Cpath%20d='M0%200C1.7%20-3.0%201.7%20-7.8%200%20-10C-1.7%20-7.8%20-1.7%20-3.0%200%200Z'%20transform='rotate(72)'/%3E%3C/g%3E%3Cpath%20d='M12%2021v3'%20stroke='%233f8f3a'%20stroke-width='1.2'%20stroke-linecap='round'/%3E%3C/svg%3E") center/1.5em no-repeat}
 /* modalità ragazzi: via le sostanze */
 body.kid #btn-nic,body.kid #btn-can,body.kid #btn-alc,body.kid #btn-coc{display:none}
 .lang{position:relative;flex-shrink:0}

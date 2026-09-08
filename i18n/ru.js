@@ -61,6 +61,7 @@ I18N.ru={
   't.trend.up':'<i class="c-dopa">Запас</i> <b>восполняется</b> (<b>+{tr}%/с</b>).',
   't.trend.hold':'<i class="c-dopa">Запас</i> <b>держится</b> ({tr}%/с).',
   'u.receptive':'нейроны восприимчивы <b>{p}%</b> времени',
+  'u.onfor':'включено {n} с',
   'u.sec':'{n} с',
   'u.d2':'D2 {rec}/{full}',
   't.stim.none.t':'😴 Стимул почти нулевой',
