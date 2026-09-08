@@ -44,7 +44,7 @@ const SUBST={
   alc:{dur:30,after:30,boost:9,release:1.25,afterThresh:1.2,des:0.008,sleep:1.3},
   coc:{dur:20,after:20,boost:14,release:1.0,datBlock:0.95,datSlow:0.3,afterDat:1.5,afterThresh:1.3,des:0.025,sleep:2.0}
 };
-const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',stimLow:'#7fb8ff',stimHigh:'#ffb347',nic:'#d4b46a',can:'#9be36f',alc:'#c96f8f',coc:'#dfe9ff'};
+const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',age:'#e6c07b',stimLow:'#7fb8ff',stimHigh:'#ffb347',nic:'#d4b46a',can:'#9be36f',alc:'#c96f8f',coc:'#dfe9ff'};
 
 // ───────────────────────── Stato ─────────────────────────
 let mode='normal',stimulus=0.10,speedMul=2,paused=false;

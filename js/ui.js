@@ -22,6 +22,10 @@ function stimToast(){
 function buildToasts(){
   const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
   list.push(mode==='adhd'?{key:'mode',c:C.adhd,t:T('t.mode.adhd.t'),b:T('t.mode.adhd.b')}:{key:'mode',c:C.active,t:T('t.mode.normal.t'),b:T('t.mode.normal.b')});
+  // Età: fuori dalla fascia adulta di riferimento (20–49) un toast spiega cosa cambia. Sotto i 20 il modello cambia molto
+  // (+1% per anno) e c'è l'adolescenza da raccontare; a 40 cambia del 6% e non ci sarebbe nulla da spiegare, dai 50 sì
+  if(age<20||age>=50){const f=ageFactor(),rel=(f>=1?'+':'−')+Math.round(Math.abs(f-1)*100)+'%',k=age<20?'young':'old';
+    list.push({key:'age',c:C.age,t:T('t.age.'+k+'.t'),s:T('u.years',{n:age}),b:T('t.age.'+k+'.b',{age,full:baseD2(),rel})});}
   list.push(stimToast());
   if(sleepToastTimer>0)list.push({key:'on',c:C.dopa,t:T('t.on.t'),b:T('t.on.b')});
   const real=Math.round(sleepDebt*100),perc=Math.round(perceivedDebt()*100);
