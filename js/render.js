@@ -150,12 +150,15 @@ function drawPostCells(){
     for(let k=0;k<=N;k++){const th=-Math.PI/2+Math.PI*k/N,w=Math.sin(th*4+t*.6+i)*ry*.03+Math.sin(th*7-t*.4+i*2)*ry*.015;
       const x=x0+(rx+w)*Math.cos(th),y=ncy+(ry+w)*Math.sin(th);k===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
     ctx.closePath();
-    if(n.glow>.01){ctx.save();ctx.shadowColor=C.active;ctx.shadowBlur=34*n.glow;ctx.fillStyle=`rgba(0,229,255,${.06*n.glow})`;ctx.fill();ctx.restore();}
+    // Luce della cellula: alone, riempimento e bordo seguono l'inviluppo n.glow (impulso, mantenimento, dissolvenza)
+    const lit=n.glow;
+    if(lit>.01){ctx.save();ctx.shadowColor=C.active;ctx.shadowBlur=34*lit;ctx.fillStyle=`rgba(0,229,255,${.07*lit})`;ctx.fill();ctx.restore();}
     const g=ctx.createLinearGradient(x0,0,x1,0);
-    if(n.active){g.addColorStop(0,'#0e2a3a');g.addColorStop(1,'#0a1c2a');}else{g.addColorStop(0,'#0d1727');g.addColorStop(1,'#0a111d');}
+    g.addColorStop(0,mixHex('#0d1727','#0e2e40',lit));g.addColorStop(1,mixHex('#0a111d','#0a1e2e',lit));
     ctx.fillStyle=g;ctx.fill();
     ctx.lineJoin='round';
-    ctx.strokeStyle=n.active?`rgba(0,229,255,${.45+n.glow*.4})`:'#26415f';ctx.lineWidth=5;ctx.stroke();
+    ctx.strokeStyle='#26415f';ctx.lineWidth=5;ctx.stroke();
+    if(lit>.01){ctx.strokeStyle=`rgba(0,229,255,${.9*lit})`;ctx.lineWidth=5;ctx.stroke();}
     ctx.strokeStyle='#0b1522';ctx.lineWidth=2;ctx.stroke();
     // Indicatore a ciambella su scala fissa (0 … 2,5 × soglia base). L'arco sale con il segnale; la tacca è la soglia
     // attuale e si sposta con debito di sonno (sale), caffeina (scende) e postumi (sale). Quando l'arco raggiunge la
@@ -164,8 +167,8 @@ function drawPostCells(){
     const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
     if(pct>0.003){
-      const col=n.active?mixHex(C.active,'#ffe27a',n.flash):'#3d6a8a';
-      ctx.save();if(n.active){ctx.shadowColor=col;ctx.shadowBlur=8+18*n.flash;}
+      const col=mixHex(n.active?C.active:'#3d6a8a','#ffe27a',n.flash);
+      ctx.save();if(n.active||n.flash>0){ctx.shadowColor=col;ctx.shadowBlur=(6+20*n.flash)*Math.max(0.5,lit);}
       ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();ctx.restore();
     }
     // Tacca della soglia: attraversa tutta la ciambella, bordo scuro sotto e bianco con alone sopra
@@ -176,7 +179,8 @@ function drawPostCells(){
     ctx.restore();
     if(R>=22){
       const inner=2*(R-half)-4;
-      if(n.active)label(T('cv.receptive'),cx,ncy,'800 9px',C.active,C.active,inner);else label(T('cv.silent'),cx,ncy,'600 9.5px','#4f6a8c',null,inner);
+      // L'etichetta segue la luce, così un impulso breve non lampeggia "silente" mentre la cellula è ancora accesa
+      if(n.active||lit>.35)label(T('cv.receptive'),cx,ncy,'800 9px',hexA(C.active,.55+.45*lit),C.active,inner);else label(T('cv.silent'),cx,ncy,'600 9.5px','#4f6a8c',null,inner);
       ctx.save();ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
       ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;ctx.fillStyle='rgba(255,255,255,.88)';
       ctx.fillText(T('cv.threshold'),cx+ca*(R+half+9),ncy+sa*(R+half+9)+(Math.abs(ca)<=0.25?(sa>0?7:-7):0));ctx.restore();

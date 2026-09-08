@@ -103,7 +103,7 @@ function rebuildAll(){
   }
   postNeurons=[];
   const nC=3,gap=12,top=12,bottom=H-26,nH=(bottom-top-gap*(nC-1))/nC;
-  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0});   // flash: lampo al superamento della soglia (solo grafica)
+  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0,hold:0});   // glow/flash/hold: inviluppo luminoso e lampo (solo grafica)
   rebuildReceptors();rebuildDat1();
   comts=[];for(let i=0;i<3;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28});
   pops=[];pulses=[];apPulses=[];
@@ -312,8 +312,12 @@ function update(dt){
     n.signal*=Math.pow(0.5,sdt/halfLifeNow());
     const was=n.active;
     n.active=n.signal>=thresholdNow();
-    n.flash=(n.active&&!was)?1:Math.max(0,n.flash-dt*2.5);   // lampo di ~0,4 s reali quando l'arco tocca la soglia
-    n.glow=n.active?Math.min(1,n.glow+6*sdt):Math.max(0,n.glow-4*sdt);
+    // Luce della cellula come un impulso (tempi reali, non cambiano con la scala): attacco istantaneo al superamento
+    // della soglia, tenuta ~0,15 s a piena luce, poi discesa a un livello di mantenimento finché resta ricettivo,
+    // e dissolvenza in ~0,35 s quando si spegne. flash: lampo giallo dell'arco, solo grafica
+    if(n.active&&!was){n.flash=1;n.glow=1;n.hold=0.15;}else n.flash=Math.max(0,n.flash-dt*2.5);
+    if(n.hold>0)n.hold-=dt;
+    else{const target=n.active?0.55:0,tau=n.active?0.30:0.35;n.glow+=(target-n.glow)*Math.min(1,dt/tau);}
   }
   rateWindow+=dt;
   if(rateWindow>=0.5){displayRelRate=Math.round(rateRelCount/rateWindow);displayReabRate=Math.round(rateReabCount/rateWindow);displayDeadRate=Math.round(rateDeadCount/rateWindow);rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateWindow=0;}
