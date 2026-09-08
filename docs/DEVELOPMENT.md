@@ -47,6 +47,7 @@ Load order in `index.html` matters: util → i18n dictionaries → i18n → mode
 | Reuptake probability near the membrane | 0.94 | 0.78 |
 | COMT enzymes / capture rate per enzyme when a free molecule is within 18 px (per frame at 60 fps, times speed) | 5 / 0.029 | 3 / 0.020 (total ADHD activity ×2.4) |
 | VMAT2 recycling share | 55% | 75% |
+| SNAP25 release efficiency (`snap25Eff`, vesicles per spike) | 1.0 | 1.0 — a hook: the gene is an ADHD candidate but no difference is simulated |
 
 Constants: reservoir 100 units; firing: tonic pacemaker at 3 Hz (`TONIC_HZ`, 1 vesicle per spike, cost 0.03) and phasic bursts of 4–6 spikes at 20 Hz (`BURST_VES` = 2 vesicles per spike, cost 0.05, 0.02 with exercise) started at stimulus × 3 bursts/s, so the average release is stimulus × 30 per second on top of the 3/s tonic; the extra release of exercise and substances (molecules/s) is delivered as extra bursts (÷ 10, one burst ≈ 10 molecules); vesicles per spike are scaled by SNAP25 efficiency, `releaseMult()` (×1.10 with caffeine), `supply()` and `ageFactor()` with a fractional carry (`vesAccum`); spikes travel down the axon at 1.4 terminal widths per simulated second (about 0.35 s of latency) and fuse their vesicles on arrival; synthesis 0.2 per second; a molecule lives 2 s in the cleft; each binding adds 0.5 signal; threshold 0.8; half-life 0.6 s.
 

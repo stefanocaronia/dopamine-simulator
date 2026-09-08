@@ -11,3 +11,5 @@ jobs:
         with:
           node-version: 20
       - run: node tests/run.js
+      # a second seed: expectations must not depend on the random stream
+      - run: node tests/run.js --seed=7

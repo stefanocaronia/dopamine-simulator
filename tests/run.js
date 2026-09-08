@@ -26,8 +26,10 @@ function reset(o={}){M.resetSim();M.setSpeed(o.speed||1);M.setMode(o.mode||'norm
 // runs `sec` simulated seconds (speed 1 = real seconds) and returns the fraction of time the neurons were receptive
 function run(sec){const P=G('postNeurons'),n=Math.round(sec/DT);let acc=0;for(let i=0;i<n;i++){M.update(DT);let a=0;for(const p of P)if(p.active)a++;acc+=a/P.length;}return acc/n;}
 const S=()=>G('({ves:vesCount,debt:sleepDebt,sens:d2Sens,d2:effectiveD2(),thr:thresholdNow(),relm:releaseMult(),block:datBlock(),dsp:datSpeedMult(),synth:synthMult(),supply:supply(),total:stats.total,fires:stats.fires,misses:stats.misses,comt:stats.comt,lost:stats.lost,maob:stats.maob,spk:displaySpikeRate,b:displayBurstRate,rel:displayRelRate,fireRate:displayFireRate,pass:passPct(),parts:particles.length,comts:comts.length,dat1:dat1s.length,recs:receptors.length,eaten:comts.reduce((a,c)=>a+c.eaten,0),caff:caffeineActive,caffEnd:caffEndTimer,mph:mphActive,reb:mphRebound,exer:exerciseActive,scroll:scrollActive,age,mode,now})');
-// average release rate over the last `sec` seconds, from stats.total
-function rate(fn,sec){const t0=S().total,r=fn(sec);return {rec:r,rel:(S().total-t0)/sec};}
+// averages over the window from the counters, not from the displayed moving averages: an EMA read at one instant
+// swings with the seed, counted events do not
+function rate(fn,sec){const a=S(),r=fn(sec),b=S(),f=b.fires-a.fires,m=b.misses-a.misses;
+  return {rec:r,rel:(b.total-a.total)/sec,fires:f/sec,pass:f+m?Math.round(100*f/(f+m)):0};}
 
 let fails=0,checks=0;const lines=[];
 function ok(name,cond,detail){checks++;if(!cond)fails++;const l=(cond?'  ok   ':'  FAIL ')+name+(detail!==undefined?'   ['+detail+']':'');lines.push(l);if(verbose||!cond)console.log(l);}
@@ -39,12 +41,12 @@ function section(t){if(verbose)console.log('\n'+t);}
 section('A. release and firing');
 reset({stim:0});run(10);let r=rate(run,30),s=S();
 within('tonic only: release/s',r.rel,2,4);within('tonic only: receptive fraction',r.rec,0,0.1);within('tonic only: spikes Hz',s.spk,2,4);within('tonic only: bursts/s',s.b,0,0.3);
-reset({stim:0.1});run(10);const n10=rate(run,30);s=S();const n10fires=(s.fires)/40;
-within('neurotypical 10%: receptive fraction',n10.rec,0.10,0.40);within('neurotypical 10%: release/s',n10.rel,4.5,7.5);within('neurotypical 10%: firings/s',s.fireRate,0.3,1.8);within('neurotypical 10%: cortical impulses passed %',s.pass,10,65);
+reset({stim:0.1});run(10);const n10=rate(run,30);s=S();
+within('neurotypical 10%: receptive fraction',n10.rec,0.10,0.40);within('neurotypical 10%: release/s',n10.rel,4.5,7.5);within('neurotypical 10%: firings/s',n10.fires,0.2,1.8);within('neurotypical 10%: cortical impulses passed %',n10.pass,5,65);
 reset({stim:0.3});run(10);const n30=rate(run,30);s=S();
-within('neurotypical 30%: receptive fraction',n30.rec,0.55,0.95);within('neurotypical 30%: release/s',n30.rel,10,14);within('neurotypical 30%: spikes Hz',s.spk,6,9);within('neurotypical 30%: bursts/s',s.b,0.6,1.2);within('neurotypical 30%: firings/s',s.fireRate,3,6);
+within('neurotypical 30%: receptive fraction',n30.rec,0.55,0.95);within('neurotypical 30%: release/s',n30.rel,10,14);within('neurotypical 30%: spikes Hz',s.spk,6,9);within('neurotypical 30%: bursts/s',s.b,0.6,1.2);within('neurotypical 30%: firings/s',n30.fires,1.8,5);
 reset({stim:1});run(10);const n100=rate(run,30);s=S();
-within('neurotypical 100%: receptive fraction',n100.rec,0.9,1);within('neurotypical 100%: release/s',n100.rel,28,38);within('neurotypical 100%: impulses passed %',s.pass,90,100);
+within('neurotypical 100%: receptive fraction',n100.rec,0.9,1);within('neurotypical 100%: release/s',n100.rel,28,38);within('neurotypical 100%: impulses passed %',n100.pass,90,100);within('neurotypical 100%: firings/s',n100.fires,10,14);
 reset({mode:'adhd',stim:0.1});run(10);const a10=rate(run,30);
 within('ADHD 10%: receptive fraction',a10.rec,0,0.15);ok('ADHD 10% well below neurotypical 10%',a10.rec<n10.rec-0.1,`${fmt(a10.rec)} vs ${fmt(n10.rec)}`);
 reset({mode:'adhd',stim:0.3});run(10);const a30=rate(run,30);

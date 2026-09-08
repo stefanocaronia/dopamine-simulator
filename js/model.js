@@ -95,7 +95,7 @@ function setGeometry(w,h){
   PRE={x:0,y:0,w:W*.30,h:H};
   CLEFT={x:PRE.w,y:0,w:W*.40,h:H};
   const dendGap=W*.05;
-  POST={x:PRE.w+CLEFT.w+dendGap,y:0,w:W-PRE.w-CLEFT.w-dendGap-2,h:H,ctxW:Math.max(34,Math.round(W*.035))};   // ctxW: corridoio a destra per le fibre dalla corteccia
+  POST={x:PRE.w+CLEFT.w+dendGap,y:0,w:W-PRE.w-CLEFT.w-dendGap-2,h:H,ctxW:Math.round(Math.max(20,Math.min(40,W*.045)))};   // ctxW: corridoio a destra per le fibre dalla corteccia (stretto sui telefoni, dove le celle hanno poco spazio)
   SNAP={x:PRE.w-2,y:H*.05,w:10,h:H*.90};
   // Terminale assonico: forma a "D" con la faccia piatta sulla membrana presinaptica (x = PRE.w)
   const cy=H*.5,yTop=H*.06,yBot=H*.94;
