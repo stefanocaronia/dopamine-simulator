@@ -19,7 +19,8 @@ function stimToast(){
   const p=activeShown>0?String(activeShown):(activeAvg>0.003?'<5':'0');
   const P={rel:displayRelRate,act:T('u.receptive',{p}),trend:trendText()};
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
-  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
+  const spk='<p>'+T('u.spikes',{hz:displaySpikeRate,b:fmt1(displayBurstRate)})+'</p>';   // scarica: impulsi/s e raffiche/s
+  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)+spk};
 }
 function buildToasts(){
   const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
@@ -94,7 +95,7 @@ const TIPS={
   maob:()=>({t:T('tip.maob.t'),c:C.dead,b:T('tip.maob.b',{maob:stats.maob,comt:stats.comt})}),
   snap:()=>({t:T('tip.snap.t'),c:C.snap,b:T('tip.snap.b',{rel:displayRelRate})}),
   vesicles:()=>({t:T('tip.vesicles.t'),c:C.dopa,b:T('tip.vesicles.b',{pct:Math.round(vesCount/MAX_VES*100),trend:trendText()})}),
-  axon:()=>({t:T('tip.axon.t'),c:C.ap,b:T('tip.axon.b',{stim:Math.round(stimulus*100)})}),
+  axon:()=>({t:T('tip.axon.t'),c:C.ap,b:T('tip.axon.b',{stim:Math.round(stimulus*100),hz:displaySpikeRate,b:fmt1(displayBurstRate)})}),
   terminal:()=>({t:T('tip.terminal.t'),c:C.snap,b:T('tip.terminal.b')}),
   cleft:()=>({t:T('tip.cleft.t'),c:C.cleft,b:T('tip.cleft.b',{free:freeCount()})}),
   post:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.post.t'),c:C.active,

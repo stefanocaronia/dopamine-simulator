@@ -87,6 +87,9 @@ function drawTerminal(){
   ctx.fillStyle=fg;ctx.fill();
   ctx.lineJoin='round';ctx.lineCap='round';
   ctx.strokeStyle='#2c5079';ctx.lineWidth=6;ctx.stroke();      // membrana (doppio strato)
+  // Luce del terminale: a ogni impulso che arriva la membrana si accende in azzurro e sfuma (inviluppo preGlow del modello)
+  if(preGlow>.01){ctx.save();ctx.shadowColor=C.active;ctx.shadowBlur=(14+18*preFlash)*preGlow;ctx.strokeStyle=`rgba(0,229,255,${.85*preGlow})`;ctx.lineWidth=6;ctx.stroke();ctx.restore();
+    ctx.fillStyle=`rgba(0,229,255,${.05*preGlow})`;ctx.fill();}
   ctx.strokeStyle='#0c1a2a';ctx.lineWidth=2.4;ctx.stroke();
   // Assone: linea interna + potenziali d'azione
   ctx.strokeStyle='rgba(60,110,170,.2)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-10,cy);ctx.lineTo(xJ+10,cy);ctx.stroke();
@@ -96,7 +99,9 @@ function drawTerminal(){
     blit(sAP,a.x,a.y,fade);}
   // Zona attiva (SNAP25) lungo la membrana
   ctx.fillStyle='rgba(70,110,200,.5)';ctx.fillRect(PRE.w-4,SNAP.y,4,SNAP.h);
-  if(stimulus>.15){ctx.save();ctx.shadowColor=C.dopa;ctx.shadowBlur=10+stimulus*14;ctx.fillStyle=`rgba(0,255,136,${.15+stimulus*.35})`;ctx.fillRect(PRE.w-3,SNAP.y,2,SNAP.h);ctx.restore();}
+  // Zona attiva: bagliore di fondo con lo stimolo e lampo verde a ogni fusione (snapGlow)
+  const sg=Math.min(1,(stimulus>.15?.15+stimulus*.35:0)+.6*snapGlow);
+  if(sg>.02){ctx.save();ctx.shadowColor=C.dopa;ctx.shadowBlur=10+stimulus*14+16*snapGlow;ctx.fillStyle=`rgba(0,255,136,${sg})`;ctx.fillRect(PRE.w-3,SNAP.y,2,SNAP.h);ctx.restore();}
   if(H>=300){ctx.save();ctx.translate(PRE.w-15,cy);ctx.rotate(-Math.PI/2);ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(130,170,235,.85)';ctx.fillText(T('cv.snap'),0,0);ctx.restore();}
   // VMAT2 (riciclo nelle vescicole)
   const V=VMAT_Z;

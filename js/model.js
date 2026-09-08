@@ -22,9 +22,17 @@ const MPH_SLEEP_MULT=1.5,MPH_REBOUND_DUR=15,MPH_REBOUND_SPEED=1.3;
 const CAFF_END_TOAST=5;
 // Debito di sonno: cresce con il tempo di veglia (adenosina), non con lo stimolo. Pieno in ~3 minuti simulati
 const SLEEP_DEBT_RATE=0.0055;
-// Attività tonica: i neuroni dopaminergici scaricano sempre un po' (~4 Hz). Qui 3 rilasci/s di fondo a basso costo,
-// indipendenti dallo stimolo: danno a caffeina e farmaco qualcosa su cui agire anche a stimolo basso
-const TONIC_RATE=3,TONIC_COST=0.03;
+// Scarica del neurone dopaminergico (Grace 1991): un pacemaker tonico sempre acceso (~3–4 Hz, impulsi singoli) e raffiche
+// fasiche di 4–6 impulsi a 20 Hz per novità e ricompense. Il rilascio è agganciato agli impulsi: ogni impulso che arriva
+// al terminale fonde poche vescicole, in raffica di più per impulso (facilitazione). Le medie sono quelle della v3.5:
+// 3 vescicole/s di fondo e stimolo × 30/s in raffiche (stimolo × 3 raffiche/s × 5 impulsi × 2 vescicole).
+// Il tonico dà a caffeina e farmaco qualcosa su cui agire anche a stimolo basso
+const TONIC_HZ=3,TONIC_VES=1,TONIC_COST=0.03;
+const BURST_HZ=20,BURST_MIN=4,BURST_MAX=6,BURST_VES=2,BURST_COST=0.05,BURST_PER_STIM=3;
+// Rilascio extra di esercizio e sostanze (molecole/s) convertito in raffiche/s: una raffica vale ~10 molecole
+const BURST_MOLS=10;
+// Velocità dei potenziali d'azione lungo l'assone (larghezze del terminale al secondo simulato): ~0,35 s di latenza
+const AP_SPEED=1.4;
 // Esaurimento: sotto il 20% di riserva il rilascio non si spegne di colpo, cala in proporzione alle vescicole rimaste
 const DEPLETE_FROM=0.20;
 // Scrolling compulsivo: raffiche di rilascio a basso costo scatenate da "segnali"; i D2 si riducono (tolleranza) e recuperano lentamente
@@ -52,11 +60,16 @@ let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=
 let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
 let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
-let scrollActive=false,scrollAccum=0,burstLeft=0,scrollOnAt=0,d2Sens=1,effD2=null;   // scrollOnAt: istante (now) dell'accensione; d2Sens: sensibilità/densità dei D2 (1 = normale)
+let scrollActive=false,scrollAccum=0,scrollOnAt=0,d2Sens=1,effD2=null;   // scrollOnAt: istante (now) dell'accensione; d2Sens: sensibilità/densità dei D2 (1 = normale)
 let age=AGE_REF;
 let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
-let rateWindow=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0;
-let relAccum=0,tonicAccum=0,now=0;
+// Tassi mostrati: contati in una finestra di 0,5 s reali e divisi per il tempo simulato trascorso (rateSim), quindi
+// per secondo simulato, coerenti con i numeri dei testi (3 Hz, 30/s) a qualunque velocità; impulsi e raffiche con media mobile
+let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0;
+let now=0;
+// Scarica: pacemaker (tonicAccum), raffiche in attesa (burstAccum), coda di impulsi da emettere a 20 Hz (spikeQ, spikeTimer)
+// e resto frazionario delle vescicole per impulso (vesAccum): le medie restano esatte anche con moltiplicatori non interi
+let tonicAccum=0,burstAccum=0,spikeQ=[],spikeTimer=0,vesAccum=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
 // e stato con isteresi (trendState: full | down | up | hold) per evitare sfarfallii nei testi
 let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
@@ -65,7 +78,9 @@ let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
 // nascondeva le accensioni brevi (0,3 neuroni in media diventava "0/3")
 let activeAvg=0,activeShown=0;
 // Effetti visivi (non influenzano il modello)
-let pops=[],pulses=[],apPulses=[],motes=[],apAccum=0;
+let pops=[],pulses=[],apPulses=[],motes=[];
+// Luce del terminale: lampo, mantenimento e dissolvenza a ogni impulso che arriva; snapGlow è il bagliore della zona attiva
+let preGlow=0,preFlash=0,preHold=0,snapGlow=0;
 
 // ───────────────────────── Geometria ─────────────────────────
 function setGeometry(w,h){
@@ -169,6 +184,30 @@ function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineAc
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
+// ───────────────────────── Scarica: impulsi e raffiche ─────────────────────────
+// Un impulso parte dall'assone con le vescicole che fonderà all'arrivo (ves) e il loro costo sulla riserva
+function emitSpike(ves,cost){if(apPulses.length<60)apPulses.push({x:-10,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.4,ves,cost});}
+// Una raffica: 4–6 impulsi messi in coda, emessi a 20 Hz da update()
+function queueBurst(ves,cost){
+  if(spikeQ.length>60)return;   // raffiche sovrapposte oltre ogni ragionevolezza: le nuove si perdono
+  const n=BURST_MIN+Math.floor(Math.random()*(BURST_MAX-BURST_MIN+1));
+  for(let i=0;i<n;i++)spikeQ.push({ves,cost});
+  rateBurstCount++;
+}
+// L'impulso arriva al terminale: il terminale si accende e le vescicole si fondono in un punto della zona attiva.
+// Vescicole per impulso = base × efficienza SNAP25 × moltiplicatori (caffeina, sostanze) × riserva × età,
+// con il resto frazionario che si accumula per l'impulso successivo
+function fireSpike(a){
+  vesAccum+=a.ves*MODES[mode].snap25Eff*releaseMult()*supply()*ageFactor();
+  let n=Math.floor(vesAccum);vesAccum-=n;
+  const cost=exerciseActive?Math.min(a.cost,0.02):a.cost;
+  const site=SNAP.y+8+Math.random()*(SNAP.h-16);
+  while(n-->0&&vesCount>1){vesCount=Math.max(0,vesCount-cost);spawn(CLEFT.x+2,Math.max(12,Math.min(H-12,site+(Math.random()-.5)*14)));stats.total++;rateRelCount++;}
+  rateSpikeCount++;
+  // Luce: un impulso di raffica accende il terminale del tutto, uno tonico a metà (lampo breve): le raffiche si distinguono
+  const burst=a.ves>=BURST_VES;preGlow=Math.max(preGlow,burst?1:0.5);preFlash=Math.max(preFlash,burst?1:0.4);preHold=0.04;snapGlow=1;
+}
+
 // ───────────────────────── Simulazione ─────────────────────────
 // dt = secondi reali (max 0,05); sdt = dt × scala del tempo. Caffeina ed esercizio durano in secondi reali.
 function update(dt){
@@ -189,44 +228,42 @@ function update(dt){
   sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*sleepMult()*sdt);
   if(sleepToastTimer>0)sleepToastTimer-=dt;
 
-  // Rilascio: l'esercizio aggiunge un boost dolce (ridotto dal debito di sonno), la caffeina lo alza un po'
+  // Scarica del neurone dopaminergico. Pacemaker tonico: impulsi singoli, tace mentre una raffica è in corso
+  tonicAccum+=TONIC_HZ*sdt;
+  while(tonicAccum>=1){tonicAccum-=1;if(!spikeQ.length)emitSpike(TONIC_VES,TONIC_COST);}
+  // Raffiche fasiche: la frequenza segue lo stimolo; esercizio (boost dolce, ridotto dal debito di sonno) e sostanze
+  // aggiungono raffiche indipendenti dallo stimolo
   const exerciseBoost=exerciseActive?15-sleepDebt*10:0;
-  const rate=(stimulus*30+exerciseBoost+substBoost())*cfg.snap25Eff*releaseMult()*supply()*ageFactor();
-  relAccum+=rate*sdt;
-  while(relAccum>=1){
-    relAccum-=1;
-    if(vesCount>1){
-      const cost=exerciseActive?0.02:0.05;
-      vesCount=Math.max(0,vesCount-cost);
-      spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;
-    }
-  }
-  // Rilascio tonico di fondo (segue i moltiplicatori delle sostanze, non lo stimolo)
-  tonicAccum+=TONIC_RATE*releaseMult()*supply()*ageFactor()*sdt;
-  while(tonicAccum>=1){tonicAccum-=1;if(vesCount>1){vesCount=Math.max(0,vesCount-TONIC_COST);spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;}}
-  if(vesCount<MAX_VES){vesCount+=0.2*synthMult()*sdt;if(vesCount>MAX_VES)vesCount=MAX_VES;}
-
-  // Ricompense facili: raffiche a basso costo scatenate da "segnali"
+  burstAccum+=(stimulus*BURST_PER_STIM+(exerciseBoost+substBoost())/BURST_MOLS)*sdt;
+  while(burstAccum>=1){burstAccum-=1;queueBurst(BURST_VES,BURST_COST);}
+  // Ricompense facili: raffiche a basso costo scatenate da "segnali" (12 vescicole per raffica)
   if(scrollActive){
     scrollAccum+=SCROLL_BURST_RATE*sdt;
-    while(scrollAccum>=1){scrollAccum-=1;burstLeft+=Math.round(SCROLL_BURST_N*supply());for(let k=0;k<3;k++)if(apPulses.length<40)apPulses.push({x:-10-k*14,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
+    while(scrollAccum>=1){scrollAccum-=1;queueBurst(SCROLL_BURST_N/((BURST_MIN+BURST_MAX)/2),SCROLL_COST);}
   }
+  // Emissione degli impulsi in coda: 20 Hz, 30 Hz se le raffiche si sovrappongono (coda lunga)
+  spikeTimer-=sdt;
+  while(spikeTimer<=0&&spikeQ.length){const q=spikeQ.shift();emitSpike(q.ves,q.cost);spikeTimer+=1/(spikeQ.length>8?30:BURST_HZ);}
+  if(spikeTimer<0)spikeTimer=0;
+  if(vesCount<MAX_VES){vesCount+=0.2*synthMult()*sdt;if(vesCount>MAX_VES)vesCount=MAX_VES;}
+
   // Assuefazione: i D2 si desensibilizzano finché la stimolazione dura (ricompense facili o sostanze attive),
   // poi tornano lentamente. Le sostanze usano secondi reali, così il costo di una dose non dipende dalla scala del tempo
   let desens=scrollActive?SCROLL_DESENS*sdt:0;
   for(const k in subst)if(subst[k].t>0)desens+=SUBST[k].des*dt;
   if(desens>0)d2Sens=Math.max(D2_SENS_MIN,d2Sens-desens);
   else if(d2Sens<1)d2Sens=Math.min(1,d2Sens+SCROLL_RECOVER*sdt);
-  if(burstLeft>0){let n=Math.min(burstLeft,Math.ceil(2*speedMul));burstLeft-=n;
-    while(n-->0&&vesCount>1){vesCount=Math.max(0,vesCount-SCROLL_COST);spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;}}
   const eff=effectiveD2();if(eff!==effD2){effD2=eff;rebuildReceptors();}   // i recettori spariscono/ricompaiono con la tolleranza
 
-  // Potenziali d'azione lungo l'assone (solo visivi): la frequenza segue lo stimolo
-  apAccum+=(1.2+stimulus*10+(exerciseActive?2:0))*dt;   // 1,2/s = attività tonica
-  while(apAccum>=1){apAccum-=1;if(apPulses.length<40)apPulses.push({x:-10,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
+  // Potenziali d'azione lungo l'assone: viaggiano in tempo simulato e, arrivati al terminale, fondono le loro vescicole
   const apEnd=TERM.xJ+PRE.w*.18;
-  for(const a of apPulses)a.x+=PRE.w*0.9*dt;
+  for(const a of apPulses){a.x+=PRE.w*AP_SPEED*sdt;if(a.x>=apEnd)fireSpike(a);}
   apPulses=apPulses.filter(a=>a.x<apEnd);
+  // Luce del terminale (tempo reale, come le cellule riceventi ma più rapida: un impulso singolo è un lampo breve,
+  // una raffica a 20 Hz tiene la membrana accesa)
+  preFlash=Math.max(0,preFlash-dt*5);
+  if(preHold>0)preHold-=dt;else preGlow-=preGlow*Math.min(1,dt/0.10);
+  snapGlow=Math.max(0,snapGlow-dt*5);
 
   const cleftLeft=CLEFT.x+3,cleftRight=CLEFT.x+CLEFT.w;
   const receptorLine=cleftRight+10;
@@ -319,8 +356,12 @@ function update(dt){
     if(n.hold>0)n.hold-=dt;
     else{const target=n.active?0.55:0,tau=n.active?0.30:0.35;n.glow+=(target-n.glow)*Math.min(1,dt/tau);}
   }
-  rateWindow+=dt;
-  if(rateWindow>=0.5){displayRelRate=Math.round(rateRelCount/rateWindow);displayReabRate=Math.round(rateReabCount/rateWindow);displayDeadRate=Math.round(rateDeadCount/rateWindow);rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateWindow=0;}
+  rateWindow+=dt;rateSim+=sdt;
+  // Media mobile (fattore 0,3 ogni 0,5 s, costante di tempo ~1,5 s): con il rilascio a raffiche una finestra secca oscillava tra 2/s e 25/s
+  if(rateWindow>=0.5){const T=Math.max(1e-6,rateSim),k=0.3;relEma+=(rateRelCount/T-relEma)*k;reabEma+=(rateReabCount/T-reabEma)*k;deadEma+=(rateDeadCount/T-deadEma)*k;
+    displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);
+    spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
+    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
@@ -396,8 +437,8 @@ function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};relAccum=0;tonicAccum=0;sleepToastTimer=3;
-  scrollActive=false;scrollAccum=0;burstLeft=0;mphRebound=0;caffEndTimer=0;
+  particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
+  scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
   for(const k in subst){subst[k].t=0;subst[k].after=0;}
   d2Sens=Math.min(1,d2Sens+SLEEP_TOL_RECOVER);effD2=null;
@@ -406,7 +447,7 @@ function resetSim(){
 // Ridosaggio: un clic mentre l'effetto è attivo lo riporta alla durata piena (un altro caffè, un'altra sigaretta)
 function startCaffeine(){caffeineTimer=CAFF_DUR;caffeineActive=true;caffEndTimer=0;}
 function startMph(){mphTimer=MPH_DUR;mphActive=true;mphRebound=0;}
-function toggleScroll(){scrollActive=!scrollActive;if(scrollActive)scrollOnAt=now;else burstLeft=0;}
+function toggleScroll(){scrollActive=!scrollActive;if(scrollActive)scrollOnAt=now;}
 // Una dose di sostanza: parte l'effetto; i D2 si consumano gradualmente mentre dura (vedi SUBST[k].des in update).
 // Se l'effetto è già attivo, la dose lo riporta alla durata piena e annulla l'effetto successivo in attesa
 function startSubst(k){const s=subst[k];if(!s)return;s.t=SUBST[k].dur;s.after=0;}
