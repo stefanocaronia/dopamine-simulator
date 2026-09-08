@@ -7,7 +7,7 @@ function trendText(){
   const tr=trendShown;
   if(trendState==='full')return T('t.trend.full');
   if(trendState==='down'){
-    const v=Math.min(tr,-0.1),secs=Math.round(vesCount/-v/5)*5;   // "vuoto tra" arrotondato a 5 s
+    const v=Math.min(tr,-0.1),secs=Math.round((vesCount-MAX_VES*DEPLETE_FROM)/-v/5)*5;   // tempo per scendere sotto il 20%, arrotondato a 5 s
     return T('t.trend.down',{tr:fmt1(v),empty:(v<-0.3&&secs>0)?T('t.trend.empty',{s:secs}):''});
   }
   if(trendState==='up')return T('t.trend.up',{tr:fmt1(Math.max(tr,0.1))});
@@ -24,7 +24,7 @@ function stimToast(){
 }
 function buildToasts(){
   const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
-  list.push(mode==='adhd'?{key:'mode',c:C.adhd,t:T('t.mode.adhd.t'),b:T('t.mode.adhd.b')}:{key:'mode',c:C.active,t:T('t.mode.normal.t'),b:T('t.mode.normal.b')});
+  list.push(mode==='adhd'?{key:'mode',c:C.adhd,t:T('t.mode.adhd.t'),b:T('t.mode.adhd.b',{n:baseD2()})}:{key:'mode',c:C.active,t:T('t.mode.normal.t'),b:T('t.mode.normal.b',{n:baseD2()})});
   // Età: fuori dalla fascia adulta di riferimento (20–49) un toast spiega cosa cambia. Sotto i 20 il modello cambia molto
   // (+1% per anno) e c'è l'adolescenza da raccontare; a 40 cambia del 6% e non ci sarebbe nulla da spiegare, dai 50 sì
   if(age<20||age>=50){const f=ageFactor(),rel=(f>=1?'+':'−')+Math.round(Math.abs(f-1)*100)+'%',k=age<20?'young':'old';
@@ -45,7 +45,7 @@ function buildToasts(){
     b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
   const sens=Math.round(d2Sens*100),D2={sens,rec:effectiveD2(),full:baseD2()},d2s=T('u.d2',{rec:D2.rec,full:D2.full});
   if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:T('u.onfor',{n:Math.max(0,Math.round(now-scrollOnAt))})+' · '+d2s,b:T('t.scroll.b',D2)});
-  else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:d2s,b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((0.92-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
+  else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:d2s,b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((1-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
   if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:caffeineActive?real+'% → '+perc+'%':real+'%',
     b:T('t.sleep.b',{thr:Math.round(perceivedDebt()*150)})+(caffeineActive?T('t.sleep.masked',{perc}):T('t.sleep.hint'))});
   if(low)list.push({key:'depl',c:C.dead,t:T('t.depl.t'),s:pct+'%',b:T('t.depl.b')});
@@ -81,9 +81,9 @@ function renderToasts(){
 // ───────────────────────── Tooltip ─────────────────────────
 const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.recept,gauge:C.recept,cortex:C.ap,particle:C.dopa,dead:C.dead,rates:C.dopa};
 const TIPS={
-  dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
+  dat1:()=>{const cfg=MODES[mode],blk=datBlock();return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:fmt1(cfg.dat1Speed*datSpeedMult()),reab:displayReabRate,blocked:blk>0?T('tip.dat1.blocked',{pct:Math.round(blk*100)}):''})};},
   comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt,n:comts.length})}),
-  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:baseD2(),sens:Math.round(d2Sens*100)}):''})}),
+  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,adhd:baseD2Of('adhd'),norm:baseD2Of('normal'),tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:baseD2(),sens:Math.round(d2Sens*100)}):''})}),
   d2bar:()=>({t:T('tip.d2bar.t'),c:C.d2,b:T('tip.d2bar.b',{rec:effectiveD2(),full:baseD2(),ref:D2_REF,max:D2_MAX})}),
   age:()=>({t:T('tip.age.t'),c:C.active,b:T('tip.age.b',{age,full:baseD2()})}),
   kid:()=>({t:T('tip.kid.t'),c:'#7fffc8',b:T('tip.kid.b')}),
@@ -103,11 +103,11 @@ const TIPS={
     b:T('tip.post.b')+(n?T('tip.post.state',{state:n.active?T('u.state.receptive'):T('u.state.silent'),sig:Math.round(n.signal/thresholdNow()*100)}):'')};},
   gauge:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.gauge.t'),c:C.recept,
     b:T('tip.gauge.b',{hl:fmtN(halfLifeNow(),2),now:n?T('tip.gauge.now',{sig:Math.round(n.signal/thresholdNow()*100)}):''})};},
-  particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy'||st==='expire';
+  particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy';   // 'expire' si disperde e resta verde
     const k=dead?'dead':st==='bound'?'bound':st==='reuptake'?'reuptake':st==='recycle'?'recycle':'free';
     return {t:T('tip.particle.'+k),c:dead?C.dead:C.dopa,b:T('tip.particle.b',{age:p&&!dead?T('tip.particle.age',{age:fmt1(p.age)}):''})};},
-  dead:()=>({t:T('tip.dead.t'),c:C.dead,b:T('tip.dead.b',{dead:stats.maob+stats.comt+stats.lost})}),
-  rates:()=>({t:T('tip.rates.t'),c:C.dopa,b:T('tip.rates.b',{rel:displayRelRate,reab:displayReabRate,dead:displayDeadRate,free:freeCount(),binds:stats.binds,rec:stats.recycled,deadTot:stats.maob+stats.comt+stats.lost})}),
+  dead:()=>({t:T('tip.dead.t'),c:C.dead,b:T('tip.dead.b',{dead:stats.maob+stats.comt,lost:stats.lost})}),
+  rates:()=>({t:T('tip.rates.t'),c:C.dopa,b:T('tip.rates.b',{rel:displayRelRate,reab:displayReabRate,dead:displayDeadRate,lost:displayLostRate,free:freeCount(),binds:stats.binds,rec:stats.recycled,deadTot:stats.maob+stats.comt,lostTot:stats.lost})}),
   'mode-adhd':()=>({t:T('tip.mode-adhd.t'),c:C.adhd,b:T('tip.mode-adhd.b')}),
   'mode-normal':()=>({t:T('tip.mode-normal.t'),c:C.active,b:T('tip.mode-normal.b')}),
   stimulus:()=>({t:T('tip.stimulus.t'),c:C.dopa,b:T('tip.stimulus.b')}),
@@ -146,7 +146,7 @@ function hitTest(mx,my){
   if(inR(VMAT_Z))return {key:'vmat2',rect:VMAT_Z};
   if(inR(MAO_Z))return {key:'maob',rect:MAO_Z};
   if(mx>PRE.w-9&&mx<PRE.w+3&&my>SNAP.y&&my<SNAP.y+SNAP.h)return {key:'snap',rect:{x:PRE.w-6,y:SNAP.y,w:6,h:SNAP.h}};
-  if(my>H-44&&mx>CLEFT.x+CLEFT.w*.1&&mx<CLEFT.x+CLEFT.w*.9)return {key:'rates',rect:{x:CLEFT.x+CLEFT.w*.1,y:H-42,w:CLEFT.w*.8,h:24}};
+  if(my>H-44&&my<H-18&&mx>CLEFT.x+CLEFT.w*.1&&mx<CLEFT.x+CLEFT.w*.9)return {key:'rates',rect:{x:CLEFT.x+CLEFT.w*.1,y:H-42,w:CLEFT.w*.8,h:24}};
   for(const v of vesicles)if(Math.hypot(mx-v.x,my-v.y)<7)return {key:'vesicles',x:v.x,y:v.y,r:6};
   for(const p of particles)if(Math.hypot(mx-p.x,my-p.y)<8)return {key:'particle',x:p.x,y:p.y,r:7,p};
   if(mx<TERM.xJ+6&&Math.abs(my-TERM.cy)<TERM.axonR)return {key:'axon'};

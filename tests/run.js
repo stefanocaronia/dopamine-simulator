@@ -16,7 +16,7 @@ const sandbox={console,performance,Math:Object.assign(Object.create(Math),{rando
 vm.createContext(sandbox);
 for(const f of ['js/util.js','js/model.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),sandbox,{filename:f});
 const G=expr=>vm.runInContext(expr,sandbox);   // evaluate inside the model's scope
-const M=G('({setGeometry,resetSim,setMode,setAge,setStimulus,setSpeed,update,startCaffeine,startMph,startExercise,toggleScroll,startSubst,thresholdNow,releaseMult,datBlock,datSpeedMult,threshMult,sleepMult,synthMult,supply,ageFactor,effectiveD2,baseD2,passPct})');
+const M=G('({setGeometry,resetSim,setMode,setAge,setStimulus,setSpeed,update,startCaffeine,startMph,startExercise,toggleScroll,startSubst,thresholdNow,releaseMult,datBlock,datSpeedMult,threshMult,sleepMult,synthMult,supply,ageFactor,effectiveD2,baseD2,baseD2Of,passPct})');
 M.setGeometry(1000,520);
 
 // ── helpers ──
@@ -25,7 +25,7 @@ const DT=1/60;
 function reset(o={}){M.resetSim();M.setSpeed(o.speed||1);M.setMode(o.mode||'normal');M.setAge(o.age||30);M.setStimulus(o.stim??0.3);G('d2Sens=1;effD2=null;sleepDebt=0;rebuildReceptors();');if(o.pre)o.pre();}
 // runs `sec` simulated seconds (speed 1 = real seconds) and returns the fraction of time the neurons were receptive
 function run(sec){const P=G('postNeurons'),n=Math.round(sec/DT);let acc=0;for(let i=0;i<n;i++){M.update(DT);let a=0;for(const p of P)if(p.active)a++;acc+=a/P.length;}return acc/n;}
-const S=()=>G('({ves:vesCount,debt:sleepDebt,sens:d2Sens,d2:effectiveD2(),thr:thresholdNow(),relm:releaseMult(),block:datBlock(),dsp:datSpeedMult(),synth:synthMult(),supply:supply(),total:stats.total,fires:stats.fires,misses:stats.misses,comt:stats.comt,lost:stats.lost,maob:stats.maob,spk:displaySpikeRate,b:displayBurstRate,rel:displayRelRate,fireRate:displayFireRate,pass:passPct(),parts:particles.length,comts:comts.length,dat1:dat1s.length,recs:receptors.length,eaten:comts.reduce((a,c)=>a+c.eaten,0),caff:caffeineActive,caffEnd:caffEndTimer,mph:mphActive,reb:mphRebound,exer:exerciseActive,scroll:scrollActive,age,mode,now})');
+const S=()=>G('({ves:vesCount,debt:sleepDebt,sens:d2Sens,d2:effectiveD2(),thr:thresholdNow(),relm:releaseMult(),block:datBlock(),dsp:datSpeedMult(),synth:synthMult(),supply:supply(),total:stats.total,fires:stats.fires,misses:stats.misses,comt:stats.comt,lost:stats.lost,maob:stats.maob,spk:displaySpikeRate,b:displayBurstRate,rel:displayRelRate,dead:displayDeadRate,lostRate:displayLostRate,fireRate:displayFireRate,pass:passPct(),parts:particles.length,comts:comts.length,dat1:dat1s.length,recs:receptors.length,eaten:comts.reduce((a,c)=>a+c.eaten,0),caff:caffeineActive,caffEnd:caffEndTimer,mph:mphActive,reb:mphRebound,exer:exerciseActive,scroll:scrollActive,age,mode,now})');
 // averages over the window from the counters, not from the displayed moving averages: an EMA read at one instant
 // swings with the seed, counted events do not
 function rate(fn,sec){const a=S(),r=fn(sec),b=S(),f=b.fires-a.fires,m=b.misses-a.misses;
@@ -111,6 +111,26 @@ within('COMT: captures in 30 s at 60% (neurotypical)',s.comt,5,40);ok('COMT: cap
 reset({mode:'adhd',stim:0.6});run(30);s=S();within('COMT: captures in 30 s at 60% (ADHD, 5 enzymes)',s.comt,5,60);
 reset({stim:0.1});run(10);t0=S();run(30);s=S();within('cortical input at 10%: impulses per neuron per s (1 + 0.3)',(s.fires+s.misses-t0.fires-t0.misses)/30/3,1.0,1.7);
 reset({stim:1});run(10);t0=S();run(30);s=S();within('cortical input at 100%: impulses per neuron per s (1 + 3)',(s.fires+s.misses-t0.fires-t0.misses)/30/3,3.3,4.7);within('cortical input at 100%: almost nothing lost',(s.misses-t0.misses)/30,0,0.5);
+
+// ── E2. what the counters and the gauge claim ──
+section('E2. counters and gauge');
+reset({stim:1});run(10);t0=S();run(30);s=S();
+const dComt=s.comt-t0.comt,dMao=s.maob-t0.maob,dLost=s.lost-t0.lost;
+ok('dispersed molecules are a large share at 100% (they must not be called destroyed)',dLost>0.2*(dComt+dMao+dLost),`${dLost} of ${dComt+dMao+dLost}`);
+within('destroyed rate counts only COMT+MAO, not dispersal',s.dead,(dComt+dMao)/30*0.6,(dComt+dMao)/30*1.4);
+ok('destroyed rate is below the rate that would include dispersal',s.dead<(dComt+dMao+dLost)/30*0.9,`${s.dead}/s vs ${((dComt+dMao+dLost)/30).toFixed(1)}/s`);
+within('dispersed rate is reported separately',s.lostRate,dLost/30*0.5,dLost/30*1.5);
+// the gauge scale must follow the threshold: with sleep debt and hangovers the threshold goes past the fixed 2.5x scale
+reset({stim:0.3});G('sleepDebt=1;');M.startSubst('alc');M.startSubst('coc');G('subst.alc.t=0.01;subst.coc.t=0.01;');run(1);s=S();
+ok('threshold can exceed the fixed gauge scale (hence the adaptive one)',s.thr>G('ACT_THRESHOLD*2.5'),`${fmt(s.thr)} vs ${fmt(G('ACT_THRESHOLD*2.5'))}`);
+// D2 counts quoted in the texts follow the age
+reset({age:12});ok('D2 counts at age 12: 14 neurotypical, 6 ADHD',G("baseD2Of('normal')")===14&&G("baseD2Of('adhd')")===6,`${G("baseD2Of('normal')")}/${G("baseD2Of('adhd')")}`);
+reset({age:30});ok('D2 counts at age 30: 12 and 5',G("baseD2Of('normal')")===12&&G("baseD2Of('adhd')")===5);
+// the reserve trend is per simulated second, like every other rate shown
+reset({stim:0,speed:1});G('vesCount=50;lastVes=50;vesTrend=0;');run(8);const tr1=G('vesTrend');
+reset({stim:0,speed:4});G('vesCount=50;lastVes=50;vesTrend=0;');run(8);const tr4=G('vesTrend');
+within('reserve trend per simulated second at 1x',tr1,0.15,0.25);
+ok('reserve trend does not change with the time scale',Math.abs(tr4-tr1)<0.06,`${fmt(tr1)} vs ${fmt(tr4)} at 4x`);
 
 // ── F. invariants after a long mixed run ──
 section('F. invariants');

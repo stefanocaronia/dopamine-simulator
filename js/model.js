@@ -72,7 +72,7 @@ let age=AGE_REF;
 let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
 // Tassi mostrati: contati in una finestra di 0,5 s reali e divisi per il tempo simulato trascorso (rateSim), quindi
 // per secondo simulato, coerenti con i numeri dei testi (3 Hz, 30/s) a qualunque velocità; impulsi e raffiche con media mobile
-let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,rateFireCount=0,rateMissCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,displayFireRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0,fireEma=0,missEma=0;
+let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,rateFireCount=0,rateMissCount=0,rateLostCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,displayFireRate=0,displayLostRate=0,relEma=0,reabEma=0,deadEma=0,lostEma=0,spikeEma=0,burstEma=0,fireEma=0,missEma=0;
 let now=0;
 // Scarica: pacemaker (tonicAccum), raffiche in attesa (burstAccum), coda di impulsi da emettere a 20 Hz (spikeQ, spikeTimer)
 // e resto frazionario delle vescicole per impulso (vesAccum): le medie restano esatte anche con moltiplicatori non interi
@@ -135,7 +135,7 @@ function rebuildReceptors(){
   const cfg=MODES[mode];receptors=[];
   const recX=CLEFT.x+CLEFT.w+4;
   postNeurons.forEach((n,ni)=>{const c=effectiveD2(),sp=n.h/(c+1),sc=Math.min(1,sp/12);   // sc: scala del glifo su schermi piccoli
-    for(let j=0;j<c;j++)receptors.push({x:recX,y:n.y+sp*(j+1),ni,sc,occupied:false,particle:null,timer:0,cooldown:0});
+    for(let j=0;j<c;j++)receptors.push({x:recX,y:n.y+sp*(j+1),ni,sc,occupied:false,particle:null,cooldown:0});
   });
 }
 
@@ -179,7 +179,8 @@ function perceivedDebt(){return sleepDebt*(caffeineActive?CAFF_DEBT_MASK:1);}
 // Età: lo stesso fattore scala i recettori D2 di partenza e il rilascio (con gli anni calano sia i D2
 // sia il numero di neuroni dopaminergici e la capacità di sintesi)
 function ageFactor(){return age<AGE_REF?1+0.01*(AGE_REF-age):Math.max(0.5,1-0.06*(age-AGE_REF)/10);}
-function baseD2(){return Math.max(2,Math.round(MODES[mode].d2Count*ageFactor()));}
+function baseD2(){return baseD2Of(mode);}
+function baseD2Of(m){return Math.max(2,Math.round(MODES[m].d2Count*ageFactor()));}   // D2 di partenza di un cervello all'età corrente
 function effectiveD2(){return Math.max(2,Math.round(MODES[mode].d2Count*ageFactor()*d2Sens));}
 // Sostanze: composizione degli effetti (attivi e successivi) sui parametri del modello
 const sAct=k=>subst[k].t>0,sAft=k=>subst[k].t<=0&&subst[k].after>0;
@@ -340,7 +341,7 @@ function update(dt){
     if(p.state==='comt_destroy'){p.timer+=sdt;   // inghiottita dalla COMT: finisce nella bocca dell'enzima diventando rossa
       const lr=1-Math.pow(.0005,sdt);p.x+=(p.eater.x-p.x)*lr;p.y+=(p.eater.y-p.y)*lr;p.alpha=Math.max(0,1-p.timer*3.3);
       if(p.alpha<=0){p.state='dead';stats.comt++;rateDeadCount++;fx(p.x,p.y,C.dead,4,15,.4);}}
-    if(p.state==='expire'){p.timer+=sdt;p.alpha=Math.max(0,1-p.timer*2);if(p.alpha<=0){p.state='dead';stats.lost++;rateDeadCount++;}}   // sfuma sul posto, verde
+    if(p.state==='expire'){p.timer+=sdt;p.alpha=Math.max(0,1-p.timer*2);if(p.alpha<=0){p.state='dead';stats.lost++;rateLostCount++;}}   // sfuma sul posto, verde: dispersa, non distrutta
     if(p.state==='bound'){p.timer+=sdt;
       if(p.timer>0.08+Math.random()*.08){
         const r=receptors.find(r=>r.particle===p);
@@ -383,14 +384,14 @@ function update(dt){
   }
   rateWindow+=dt;rateSim+=sdt;
   // Media mobile (fattore 0,3 ogni 0,5 s, costante di tempo ~1,5 s): con il rilascio a raffiche una finestra secca oscillava tra 2/s e 25/s
-  if(rateWindow>=0.5){const T=Math.max(1e-6,rateSim),k=0.3;relEma+=(rateRelCount/T-relEma)*k;reabEma+=(rateReabCount/T-reabEma)*k;deadEma+=(rateDeadCount/T-deadEma)*k;
-    displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);
+  if(rateWindow>=0.5){const T=Math.max(1e-6,rateSim),k=0.3;relEma+=(rateRelCount/T-relEma)*k;reabEma+=(rateReabCount/T-reabEma)*k;deadEma+=(rateDeadCount/T-deadEma)*k;lostEma+=(rateLostCount/T-lostEma)*k;
+    displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);displayLostRate=Math.round(lostEma);
     spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
     fireEma+=(rateFireCount/T-fireEma)*k;missEma+=(rateMissCount/T-missEma)*k;displayFireRate=Math.round(fireEma*10)/10;
-    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateMissCount=0;rateWindow=0;rateSim=0;}
+    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateLostCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateMissCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
-  if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
+  if(sdt>0){const dv=(vesCount-lastVes)/sdt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}   // per secondo simulato, come sintesi (0,2/s) e rilascio
   lastVes=vesCount;
   let nAct=0;for(const n of postNeurons)if(n.active)nAct++;
   if(postNeurons.length)activeAvg+=(nAct/postNeurons.length-activeAvg)*Math.min(1,dt*0.25);
@@ -464,7 +465,7 @@ function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;missEma=0;displayFireRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
+  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;missEma=0;lostEma=0;displayFireRate=0;displayLostRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
   for(const k in subst){subst[k].t=0;subst[k].after=0;}

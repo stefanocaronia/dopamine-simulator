@@ -170,12 +170,12 @@ function drawPostCells(){
     // attuale e si sposta con debito di sonno (sale), caffeina (scende) e postumi (sale). Quando l'arco raggiunge la
     // tacca il neurone diventa ricettivo: l'arco si fa giallo (lampo verso il bianco nell'istante del superamento).
     // La luce azzurra della cellula è un'altra cosa: la scarica, quando un impulso dalla corteccia arriva mentre è ricettivo
-    const lw=Math.max(7,Math.min(14,R*0.34)),half=lw/2,scale=ACT_THRESHOLD*2.5;
-    const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
+    const lw=Math.max(7,Math.min(14,R*0.34)),half=lw/2,scale=Math.max(ACT_THRESHOLD*2.5,thresh*1.15);   // la tacca resta dentro l'anello anche con debito di sonno e postumi
+    const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*(thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
     if(pct>0.003){
       const col=mixHex(n.active?C.recept:'#3d6a8a','#ffffff',n.flash*.7);
-      ctx.save();if(n.active||n.flash>0){ctx.shadowColor=col;ctx.shadowBlur=(6+20*n.flash)*Math.max(0.5,lit);}
+      ctx.save();if(n.active||n.flash>0){ctx.shadowColor=col;ctx.shadowBlur=6+20*n.flash;}
       ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();ctx.restore();
     }
     // Tacca della soglia: attraversa tutta la ciambella, bordo scuro sotto e bianco con alone sopra
@@ -224,12 +224,12 @@ function drawDAT1(){
   const blk=datBlock(),blkColor=subst.coc.t>0?C.coc:C.mph,sBlk=blk>0?sprite(blkColor,3,13):null;
   for(const d of dat1s){ctx.save();
     const act=d.state==='reaching'||d.state==='pulling',occupied=d.state==='blocked';
-    if(sBlk)blit(sBlk,d.x,d.y,occupied?.7:.35);   // occupato dal farmaco adesso: alone più forte del colore della sostanza
+    if(sBlk)blit(sBlk,d.x,d.y,occupied?.7:.25);   // occupato dal farmaco adesso: alone più forte del colore della sostanza
     if(act)blit(sActive,d.x,d.y,.7);
     roundRect(d.x-7,d.y-9,13,18,4);ctx.fillStyle=act?'#3a1d6e':'#241447';ctx.fill();
     ctx.strokeStyle=act?'#c98cff':C.dat;ctx.lineWidth=1.5;ctx.stroke();
     ctx.beginPath();ctx.moveTo(d.x-1,d.y-5);ctx.lineTo(d.x-1,d.y+5);ctx.strokeStyle=act?'#e9d5ff':'#7a4fc0';ctx.lineWidth=2;ctx.stroke();
-    if(blk>0){ctx.beginPath();ctx.moveTo(d.x-9,d.y+10);ctx.lineTo(d.x+8,d.y-10);ctx.strokeStyle=blkColor;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
+    if(occupied){ctx.beginPath();ctx.moveTo(d.x-9,d.y+10);ctx.lineTo(d.x+8,d.y-10);ctx.strokeStyle=blkColor;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}   // sbarrato solo chi è davvero occupato dal farmaco
     if(d.arm>0&&d.target){const dx=d.target.x-d.x,dy=d.target.y-d.y,dist=Math.max(1,Math.hypot(dx,dy));
       const armLen=d.arm*Math.min(CLEFT.w+40,dist),tipX=d.x+dx/dist*armLen,tipY=d.y+dy/dist*armLen;
       ctx.setLineDash([5,4]);ctx.lineDashOffset=d.state==='pulling'?t*50:-t*50;
