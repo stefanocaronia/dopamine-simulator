@@ -10,7 +10,7 @@ An interactive, educational simulation of a dopamine synapse. Watch dopamine get
 - Switch brain (neurotypical or ADHD), age, stimulus and time scale
 - Interventions: caffeine, ADHD medication, exercise, sleep
 - Addictions: easy rewards (scrolling, gaming, gambling…), nicotine, cannabis, alcohol, cocaine, each with its after-effect and its cost in receptors
-- Watch the neuron fire: a tonic pacemaker and phasic bursts travel down the axon, light up the terminal and release dopamine in packets
+- Watch the neurons fire: a tonic pacemaker and phasic bursts travel down the axon, light up the terminal and release dopamine in packets; the receiving neurons fire only when a cortical input arrives while dopamine has made them receptive
 - Read what is happening: live state cards under the canvas and a tooltip on every element
 - Two more pages: **How it works** (short sections, infographics, glossary) and **Model vs reality** (what is simplified and why)
 - Kids mode (🧒 in the header, or `?kid=1` in a shared link): no substances, kid-friendly examples, age starting at 12

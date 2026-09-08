@@ -36,6 +36,10 @@ const BURST_HZ=20,BURST_MIN=4,BURST_MAX=6,BURST_VES=2,BURST_COST=0.05,BURST_PER_
 const BURST_MOLS=10;
 // Velocità dei potenziali d'azione lungo l'assone (larghezze del terminale al secondo simulato): ~0,35 s di latenza
 const AP_SPEED=1.4;
+// Ingresso dalla corteccia sui neuroni riceventi: impulsi glutammatergici di fondo più una parte che cresce con lo stimolo
+// (la corteccia dice "cosa", la dopamina "quanto conta"). L'impulso fa scaricare il neurone solo se è ricettivo.
+// CTX_TRAVEL: secondi simulati che l'impulso impiega dal bordo destro alla cellula
+const CTX_BASE_HZ=1,CTX_STIM_HZ=3,CTX_TRAVEL=0.3;
 // Esaurimento: sotto il 20% di riserva il rilascio non si spegne di colpo, cala in proporzione alle vescicole rimaste
 const DEPLETE_FROM=0.20;
 // Scrolling compulsivo: raffiche di rilascio a basso costo scatenate da "segnali"; i D2 si riducono (tolleranza) e recuperano lentamente
@@ -55,12 +59,12 @@ const SUBST={
   alc:{dur:30,after:30,boost:9,release:1.25,afterThresh:1.2,des:0.008,sleep:1.3},
   coc:{dur:20,after:20,boost:14,release:1.0,datBlock:0.95,datSlow:0.3,afterDat:1.5,afterThresh:1.3,des:0.025,sleep:2.0}
 };
-const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',age:'#e6c07b',stimLow:'#7fb8ff',stimHigh:'#ffb347',nic:'#d4b46a',can:'#9be36f',alc:'#c96f8f',coc:'#dfe9ff'};
+const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',recept:'#ffe27a',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',age:'#e6c07b',stimLow:'#7fb8ff',stimHigh:'#ffb347',nic:'#d4b46a',can:'#9be36f',alc:'#c96f8f',coc:'#dfe9ff'};
 
 // ───────────────────────── Stato ─────────────────────────
 let mode='normal',stimulus=0.10,speedMul=2,paused=false;
 let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=[],comts=[];
-let stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0};   // lost: molecole scadute (2 s libere nella fessura), disperse senza COMT
+let stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};   // fires/misses: impulsi corticali passati o spenti   // lost: molecole scadute (2 s libere nella fessura), disperse senza COMT
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
 let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
 let scrollActive=false,scrollAccum=0,scrollOnAt=0,d2Sens=1,effD2=null;   // scrollOnAt: istante (now) dell'accensione; d2Sens: sensibilità/densità dei D2 (1 = normale)
@@ -68,7 +72,7 @@ let age=AGE_REF;
 let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
 // Tassi mostrati: contati in una finestra di 0,5 s reali e divisi per il tempo simulato trascorso (rateSim), quindi
 // per secondo simulato, coerenti con i numeri dei testi (3 Hz, 30/s) a qualunque velocità; impulsi e raffiche con media mobile
-let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0;
+let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,rateFireCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,displayFireRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0,fireEma=0;
 let now=0;
 // Scarica: pacemaker (tonicAccum), raffiche in attesa (burstAccum), coda di impulsi da emettere a 20 Hz (spikeQ, spikeTimer)
 // e resto frazionario delle vescicole per impulso (vesAccum): le medie restano esatte anche con moltiplicatori non interi
@@ -91,7 +95,7 @@ function setGeometry(w,h){
   PRE={x:0,y:0,w:W*.30,h:H};
   CLEFT={x:PRE.w,y:0,w:W*.40,h:H};
   const dendGap=W*.05;
-  POST={x:PRE.w+CLEFT.w+dendGap,y:0,w:W-PRE.w-CLEFT.w-dendGap-2,h:H};
+  POST={x:PRE.w+CLEFT.w+dendGap,y:0,w:W-PRE.w-CLEFT.w-dendGap-2,h:H,ctxW:Math.max(34,Math.round(W*.035))};   // ctxW: corridoio a destra per le fibre dalla corteccia
   SNAP={x:PRE.w-2,y:H*.05,w:10,h:H*.90};
   // Terminale assonico: forma a "D" con la faccia piatta sulla membrana presinaptica (x = PRE.w)
   const cy=H*.5,yTop=H*.06,yBot=H*.94;
@@ -121,7 +125,7 @@ function rebuildAll(){
   }
   postNeurons=[];
   const nC=3,gap=12,top=12,bottom=H-26,nH=(bottom-top-gap*(nC-1))/nC;
-  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0,hold:0});   // glow/flash/hold: inviluppo luminoso e lampo (solo grafica)
+  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0,hold:0,ctxAccum:Math.random(),inPulses:[],fires:0,misses:0});   // glow/hold: luce della scarica; flash: lampo della ciambella; inPulses: impulsi dalla corteccia in viaggio
   rebuildReceptors();rebuildDat1();
   rebuildComts();
   pops=[];pulses=[];apPulses=[];
@@ -153,7 +157,7 @@ function buildMotes(){
 
 // Geometria delle cellule riceventi (condivisa da rendering e hit-test)
 function postGeom(i){
-  const x0=CLEFT.x+CLEFT.w+2,x1=W-6,n=postNeurons[i],ncy=n.y+n.h/2,rx=x1-x0,ry=n.h/2-3;
+  const x0=CLEFT.x+CLEFT.w+2,x1=W-6-POST.ctxW,n=postNeurons[i],ncy=n.y+n.h/2,rx=x1-x0,ry=n.h/2-3;
   return {x0,x1,n,ncy,rx,ry,gx:x0+rx*.52,R:Math.min(ry*.55,36)};
 }
 
@@ -361,19 +365,27 @@ function update(dt){
     n.signal*=Math.pow(0.5,sdt/halfLifeNow());
     const was=n.active;
     n.active=n.signal>=thresholdNow();
-    // Luce della cellula come un impulso (tempi reali, non cambiano con la scala): attacco istantaneo al superamento
-    // della soglia, tenuta ~0,15 s a piena luce, poi discesa a un livello di mantenimento finché resta ricettivo,
-    // e dissolvenza in ~0,35 s quando si spegne. flash: lampo giallo dell'arco, solo grafica
-    if(n.active&&!was){n.flash=1;n.glow=1;n.hold=0.15;}else n.flash=Math.max(0,n.flash-dt*2.5);
-    if(n.hold>0)n.hold-=dt;
-    else{const target=n.active?0.55:0,tau=n.active?0.30:0.35;n.glow+=(target-n.glow)*Math.min(1,dt/tau);}
+    // Sopra la soglia il neurone è ricettivo (ciambella gialla); la luce azzurra della cellula è la scarica, che arriva
+    // solo con un impulso dalla corteccia. Inviluppi in tempo reale (non cambiano con la scala), solo grafica
+    if(n.active&&!was)n.flash=1;else n.flash=Math.max(0,n.flash-dt*2.5);   // lampo della ciambella al superamento della soglia
+    // Ingresso dalla corteccia: gli impulsi viaggiano da destra; arrivati, fanno scaricare il neurone solo se è ricettivo
+    n.ctxAccum+=(CTX_BASE_HZ+CTX_STIM_HZ*stimulus)*sdt;
+    while(n.ctxAccum>=1){n.ctxAccum-=1;if(n.inPulses.length<12)n.inPulses.push({s:0});}
+    for(const u of n.inPulses){u.s+=sdt/CTX_TRAVEL;
+      if(u.s>=1){const g=postGeom(postNeurons.indexOf(n));
+        if(n.active){n.glow=1;n.hold=0.06;n.fires++;stats.fires++;rateFireCount++;fx(g.x1-2,g.ncy,C.active,4,20,.45);}   // scarica: luce azzurra a impulso
+        else{n.misses++;stats.misses++;fx(g.x1-2,g.ncy,'#7d8fa6',3,9,.3);}}}   // impulso perso: piccolo anello grigio
+    n.inPulses=n.inPulses.filter(u=>u.s<1);
+    // Luce della scarica: tenuta breve e dissolvenza, come il terminale
+    if(n.hold>0)n.hold-=dt;else n.glow-=n.glow*Math.min(1,dt/0.15);
   }
   rateWindow+=dt;rateSim+=sdt;
   // Media mobile (fattore 0,3 ogni 0,5 s, costante di tempo ~1,5 s): con il rilascio a raffiche una finestra secca oscillava tra 2/s e 25/s
   if(rateWindow>=0.5){const T=Math.max(1e-6,rateSim),k=0.3;relEma+=(rateRelCount/T-relEma)*k;reabEma+=(rateReabCount/T-reabEma)*k;deadEma+=(rateDeadCount/T-deadEma)*k;
     displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);
     spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
-    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateWindow=0;rateSim=0;}
+    fireEma+=(rateFireCount/T-fireEma)*k;displayFireRate=Math.round(fireEma*10)/10;
+    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
@@ -450,7 +462,7 @@ function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0};tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
+  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;displayFireRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
   for(const k in subst){subst[k].t=0;subst[k].after=0;}

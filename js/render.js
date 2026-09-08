@@ -167,12 +167,13 @@ function drawPostCells(){
     ctx.strokeStyle='#0b1522';ctx.lineWidth=2;ctx.stroke();
     // Indicatore a ciambella su scala fissa (0 … 2,5 × soglia base). L'arco sale con il segnale; la tacca è la soglia
     // attuale e si sposta con debito di sonno (sale), caffeina (scende) e postumi (sale). Quando l'arco raggiunge la
-    // tacca il neurone diventa ricettivo: lampo giallo nell'istante del superamento, poi ciano finché resta sopra
+    // tacca il neurone diventa ricettivo: l'arco si fa giallo (lampo verso il bianco nell'istante del superamento).
+    // La luce azzurra della cellula è un'altra cosa: la scarica, quando un impulso dalla corteccia arriva mentre è ricettivo
     const lw=Math.max(7,Math.min(14,R*0.34)),half=lw/2,scale=ACT_THRESHOLD*2.5;
     const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
     if(pct>0.003){
-      const col=mixHex(n.active?C.active:'#3d6a8a','#ffe27a',n.flash);
+      const col=mixHex(n.active?C.recept:'#3d6a8a','#ffffff',n.flash*.7);
       ctx.save();if(n.active||n.flash>0){ctx.shadowColor=col;ctx.shadowBlur=(6+20*n.flash)*Math.max(0.5,lit);}
       ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();ctx.restore();
     }
@@ -184,12 +185,19 @@ function drawPostCells(){
     ctx.restore();
     if(R>=22){
       const inner=2*(R-half)-4;
-      // L'etichetta segue la luce, così un impulso breve non lampeggia "silente" mentre la cellula è ancora accesa
-      if(n.active||lit>.35)label(T('cv.receptive'),cx,ncy,'800 9px',hexA(C.active,.55+.45*lit),C.active,inner);else label(T('cv.silent'),cx,ncy,'600 9.5px','#4f6a8c',null,inner);
+      if(n.active)label(T('cv.receptive'),cx,ncy,'800 9px',C.recept,C.recept,inner);else label(T('cv.silent'),cx,ncy,'600 9.5px','#4f6a8c',null,inner);
       ctx.save();ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
       ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;ctx.fillStyle='rgba(255,255,255,.88)';
       ctx.fillText(T('cv.threshold'),cx+ca*(R+half+9),ncy+sa*(R+half+9)+(Math.abs(ca)<=0.25?(sa>0?7:-7):0));ctx.restore();
     }
+    // Fibra dalla corteccia: entra dal bordo destro nella punta della cellula; gli impulsi (gialli, come quelli dell'assone)
+    // viaggiano verso sinistra e all'arrivo fanno scaricare il neurone se è ricettivo (anello azzurro), altrimenti muoiono (anello grigio)
+    const fx0=W+4,fx1=x1-1;
+    ctx.strokeStyle='rgba(255,226,122,.28)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(fx0,ncy);ctx.lineTo(fx1,ncy);ctx.stroke();
+    ctx.fillStyle='rgba(255,226,122,.45)';ctx.beginPath();ctx.arc(fx1,ncy,2.6,0,6.283);ctx.fill();
+    const sIn=sprite(C.ap,2.2,9);
+    for(const u of n.inPulses){const px=fx0+(fx1-fx0)*u.s,fade=u.s>.85?Math.max(0,1-(u.s-.85)/.15):1;
+      ctx.strokeStyle=`rgba(255,226,122,${.55*fade})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(px+16,ncy);ctx.lineTo(px,ncy);ctx.stroke();blit(sIn,px,ncy,fade);}
   }
   // Recettori D2: tasche aperte verso la fessura, incastonate nella membrana.
   // Con la caffeina hanno un alone caldo (rispondono di più); con l'assuefazione sono semplicemente di meno.
@@ -282,7 +290,7 @@ function drawCOMT(){
 function drawFX(){
   ctx.lineWidth=1.5;
   for(const f of pops){const k=f.age/f.dur,r=f.r0+(f.r1-f.r0)*k;ctx.beginPath();ctx.arc(f.x,f.y,r,0,6.283);ctx.strokeStyle=hexA(f.color,(1-k)*.8);ctx.stroke();}
-  const sp=sprite(C.active,3,10);
+  const sp=sprite(C.recept,3,10);
   for(const u of pulses){const k=u.age/.45,{ncy,gx}=postGeom(u.ni);
     if(k<.6){const kk=k/.6;ctx.beginPath();ctx.arc(u.x,u.y,4+16*kk,0,6.283);ctx.strokeStyle=`rgba(0,255,136,${(1-kk)*.7})`;ctx.stroke();}
     const e=k*k*(3-2*k);blit(sp,u.x+(gx-u.x)*e,u.y+(ncy-u.y)*e,1-k*.6);}
@@ -309,6 +317,7 @@ function drawLabels(){
   ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);
   ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText(T('cv.d2',{n:effectiveD2()}),CLEFT.x+CLEFT.w-8,16);
   ctx.textAlign='left';ctx.font='600 9.5px "Segoe UI",system-ui,sans-serif';ctx.fillStyle='rgba(130,170,235,.7)';ctx.fillText(T('cv.axon'),6,TERM.cy-TERM.axonR-6);
+  if(H>=300){ctx.save();ctx.translate(W-9,H*.5);ctx.rotate(-Math.PI/2);ctx.font='700 9px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,226,122,.7)';ctx.fillText(T('cv.cortex'),0,0);ctx.restore();}
   drawRates();
 }
 

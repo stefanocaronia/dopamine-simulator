@@ -83,7 +83,7 @@ button[data-tip],.seg button[data-tip]{cursor:pointer}
 
 /* parole chiave colorate nei testi */
 i[class^="c-"]{font-style:normal;font-weight:700}
-.c-dopa{color:#00ff88}.c-dead{color:#ff5c7a}.c-dat{color:#c98cff}.c-comt{color:#ffa060}.c-vmat{color:#7ab8ff}.c-d2{color:#ffd54a}.c-act{color:#00e5ff}.c-adhd{color:#ff9d55}.c-norm{color:#00e5ff}.c-caff{color:#f0a060}.c-mph{color:#ff7fbf}.c-exer{color:#5fd68f}.c-sleep{color:#b39cf0}.c-scroll{color:#9ecbff}.c-tol{color:#aab8cc}
+.c-dopa{color:#00ff88}.c-dead{color:#ff5c7a}.c-dat{color:#c98cff}.c-comt{color:#ffa060}.c-vmat{color:#7ab8ff}.c-d2{color:#ffd54a}.c-act{color:#ffe27a}.c-fire{color:#00e5ff}.c-adhd{color:#ff9d55}.c-norm{color:#00e5ff}.c-caff{color:#f0a060}.c-mph{color:#ff7fbf}.c-exer{color:#5fd68f}.c-sleep{color:#b39cf0}.c-scroll{color:#9ecbff}.c-tol{color:#aab8cc}
 
 /* ── Sidebar ── */
 #sidebar{display:flex;flex-direction:column;gap:12px;min-width:0}

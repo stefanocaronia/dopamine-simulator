@@ -19,7 +19,7 @@ function stimToast(){
   const p=activeShown>0?String(activeShown):(activeAvg>0.003?'<5':'0');
   const P={rel:displayRelRate,act:T('u.receptive',{p}),trend:trendText()};
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
-  const spk='<p>'+T('u.spikes',{hz:displaySpikeRate,b:fmt1(displayBurstRate)})+'</p>';   // scarica: impulsi/s e raffiche/s
+  const spk='<p>'+T('u.spikes',{hz:displaySpikeRate,b:fmt1(displayBurstRate)})+' · '+T('u.fires',{n:fmt1(displayFireRate)})+'</p>';   // scarica: impulsi/s, raffiche/s e scariche dei neuroni riceventi
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)+spk};
 }
 function buildToasts(){
@@ -79,7 +79,7 @@ function renderToasts(){
 }
 
 // ───────────────────────── Tooltip ─────────────────────────
-const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.active,gauge:C.active,particle:C.dopa,dead:C.dead,rates:C.dopa};
+const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.recept,gauge:C.recept,cortex:C.ap,particle:C.dopa,dead:C.dead,rates:C.dopa};
 const TIPS={
   dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
   comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt,n:comts.length})}),
@@ -98,9 +98,10 @@ const TIPS={
   axon:()=>({t:T('tip.axon.t'),c:C.ap,b:T('tip.axon.b',{stim:Math.round(stimulus*100),hz:displaySpikeRate,b:fmt1(displayBurstRate)})}),
   terminal:()=>({t:T('tip.terminal.t'),c:C.snap,b:T('tip.terminal.b')}),
   cleft:()=>({t:T('tip.cleft.t'),c:C.cleft,b:T('tip.cleft.b',{free:freeCount()})}),
-  post:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.post.t'),c:C.active,
+  cortex:()=>({t:T('tip.cortex.t'),c:C.ap,b:T('tip.cortex.b',{hz:fmt1(CTX_BASE_HZ+CTX_STIM_HZ*stimulus),fires:fmt1(displayFireRate),passed:stats.fires,lost:stats.misses})}),
+  post:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.post.t'),c:C.recept,
     b:T('tip.post.b')+(n?T('tip.post.state',{state:n.active?T('u.state.receptive'):T('u.state.silent'),sig:Math.round(n.signal/thresholdNow()*100)}):'')};},
-  gauge:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.gauge.t'),c:C.active,
+  gauge:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.gauge.t'),c:C.recept,
     b:T('tip.gauge.b',{hl:fmtN(halfLifeNow(),2),now:n?T('tip.gauge.now',{sig:Math.round(n.signal/thresholdNow()*100)}):''})};},
   particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy'||st==='expire';
     const k=dead?'dead':st==='bound'?'bound':st==='reuptake'?'reuptake':st==='recycle'?'recycle':'free';
@@ -152,6 +153,7 @@ function hitTest(mx,my){
   const u=(PRE.w-mx)/TERM.rx,v=(my-TERM.cy)/TERM.ry;
   if(mx<PRE.w&&u*u+v*v<=1)return {key:'terminal'};
   for(let i=0;i<postNeurons.length;i++){const g=postGeom(i),uu=(mx-g.x0)/g.rx,vv=(my-g.ncy)/g.ry;if(mx>=g.x0&&uu*uu+vv*vv<=1)return {key:'post',ni:i};}
+  if(mx>=W-POST.ctxW-4)return {key:'cortex'};
   if(mx>=CLEFT.x&&mx<=CLEFT.x+CLEFT.w)return {key:'cleft'};
   return null;
 }
