@@ -4,10 +4,13 @@
    Ogni modifica alla biologia va annotata in docs/fedelta-biologica.md. */
 
 // ───────────────────────── Parametri del modello ─────────────────────────
-// comtRate: nello striato la COMT pesa poco (è per lo più intracellulare); qui resta come metafora a peso ridotto
+// comtRate: nello striato la COMT pesa poco (è per lo più intracellulare); qui resta come metafora a peso ridotto.
+// comtCount: enzimi sullo schermo (5 nell'ADHD, 3 nel neurotipico); il tasso è per enzima, tarato perché l'attività
+// totale dell'ADHD resti ×2,4 (5 × 0,029 ≈ 2,4 × 3 × 0,020). Tasso a contatto: ~1,2 catture/s per enzima nel neurotipico;
+// prima (0,005) i Pac-Man mangiavano 2 molecole in 30 s e le "distrutte dalla COMT" erano quasi tutte molecole scadute
 const MODES={
-  adhd:  {d2Count:5, dat1Speed:2.0,dat1Count:5,comtRate:0.012,vmat2Ratio:0.55,snap25Eff:1.0},
-  normal:{d2Count:12,dat1Speed:0.7,dat1Count:3,comtRate:0.005,vmat2Ratio:0.75,snap25Eff:1.0}
+  adhd:  {d2Count:5, dat1Speed:2.0,dat1Count:5,comtCount:5,comtRate:0.029,vmat2Ratio:0.55,snap25Eff:1.0},
+  normal:{d2Count:12,dat1Speed:0.7,dat1Count:3,comtCount:3,comtRate:0.020,vmat2Ratio:0.75,snap25Eff:1.0}
 };
 const MAX_VES=100,MAX_P=500,BIND_DIST=22;
 const ACT_THRESHOLD=0.8,SIGNAL_PER_BIND=0.5,SIGNAL_HALF_LIFE=0.6;
@@ -57,7 +60,7 @@ const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388d
 // ───────────────────────── Stato ─────────────────────────
 let mode='normal',stimulus=0.10,speedMul=2,paused=false;
 let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=[],comts=[];
-let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
+let stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0};   // lost: molecole scadute (2 s libere nella fessura), disperse senza COMT
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
 let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
 let scrollActive=false,scrollAccum=0,scrollOnAt=0,d2Sens=1,effD2=null;   // scrollOnAt: istante (now) dell'accensione; d2Sens: sensibilità/densità dei D2 (1 = normale)
@@ -120,7 +123,7 @@ function rebuildAll(){
   const nC=3,gap=12,top=12,bottom=H-26,nH=(bottom-top-gap*(nC-1))/nC;
   for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0,hold:0});   // glow/flash/hold: inviluppo luminoso e lampo (solo grafica)
   rebuildReceptors();rebuildDat1();
-  comts=[];for(let i=0;i<3;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28});
+  rebuildComts();
   pops=[];pulses=[];apPulses=[];
 }
 
@@ -130,6 +133,12 @@ function rebuildReceptors(){
   postNeurons.forEach((n,ni)=>{const c=effectiveD2(),sp=n.h/(c+1),sc=Math.min(1,sp/12);   // sc: scala del glifo su schermi piccoli
     for(let j=0;j<c;j++)receptors.push({x:recX,y:n.y+sp*(j+1),ni,sc,occupied:false,particle:null,timer:0,cooldown:0});
   });
+}
+
+// COMT: eat = tempo residuo dell'animazione "inghiotte", eaten = molecole mangiate (numerino sotto l'enzima)
+function rebuildComts(){
+  const n=MODES[mode].comtCount;comts=[];
+  for(let i=0;i<n;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28,eat:0,eaten:0});
 }
 
 function rebuildDat1(){
@@ -305,7 +314,7 @@ function update(dt){
       if(p.x>receptorLine){p.x=receptorLine-2;p.vx=-Math.abs(p.vx)*0.3;}
       if(p.y<8){p.y=10;p.vy=Math.abs(p.vy)*0.1;}
       if(p.y>H-8){p.y=H-10;p.vy=-Math.abs(p.vy)*0.1;}
-      p.age+=sdt;if(p.age>2.0){p.state='comt_destroy';p.timer=0;}
+      p.age+=sdt;if(p.age>2.0){p.state='expire';p.timer=0;}   // scaduta: si disperde (non è una cattura della COMT)
     }
     if(p.state==='reuptake'&&p.target){
       const lr=1-Math.pow(.001,sdt);p.x+=(p.target.x-p.x)*lr;p.y+=(p.target.y-p.y)*lr;
@@ -322,7 +331,10 @@ function update(dt){
       const lr=1-Math.pow(.002,sdt);p.x+=(p.target.x-p.x)*lr;p.y+=(p.target.y-p.y)*lr;
       p.timer+=sdt;p.alpha=Math.max(0,1-p.timer*1.8);if(p.alpha<=0){p.state='dead';stats.maob++;rateDeadCount++;fx(p.x,p.y,C.dead,2,9,.35);}
     }
-    if(p.state==='comt_destroy'){p.timer+=sdt;p.alpha=Math.max(0,1-p.timer*2.5);if(p.alpha<=0){p.state='dead';stats.comt++;rateDeadCount++;fx(p.x,p.y,C.dead,2,9,.35);}}
+    if(p.state==='comt_destroy'){p.timer+=sdt;   // inghiottita dalla COMT: finisce nella bocca dell'enzima diventando rossa
+      const lr=1-Math.pow(.0005,sdt);p.x+=(p.eater.x-p.x)*lr;p.y+=(p.eater.y-p.y)*lr;p.alpha=Math.max(0,1-p.timer*3.3);
+      if(p.alpha<=0){p.state='dead';stats.comt++;rateDeadCount++;fx(p.x,p.y,C.dead,4,15,.4);}}
+    if(p.state==='expire'){p.timer+=sdt;p.alpha=Math.max(0,1-p.timer*2);if(p.alpha<=0){p.state='dead';stats.lost++;rateDeadCount++;}}   // sfuma sul posto, verde
     if(p.state==='bound'){p.timer+=sdt;
       if(p.timer>0.08+Math.random()*.08){
         const r=receptors.find(r=>r.particle===p);
@@ -401,16 +413,17 @@ function update(dt){
     }
     let nearest=null,nearDist=Infinity;
     for(const p of particles){if(p.state!=='free')continue;const d=Math.hypot(p.x-c.x,p.y-c.y);if(d<nearDist){nearDist=d;nearest=p;}}
-    if(nearest&&nearDist<120){const dx=nearest.x-c.x,dy=nearest.y-c.y,dist=Math.max(1,Math.hypot(dx,dy));c.vx+=dx/dist*.15;c.vy+=dy/dist*.15;}
+    if(nearest&&nearDist<150){const dx=nearest.x-c.x,dy=nearest.y-c.y,dist=Math.max(1,Math.hypot(dx,dy));c.vx+=dx/dist*.25;c.vy+=dy/dist*.25;}   // insegue la molecola libera più vicina
     c.vx+=(Math.random()-.5)*.4;c.vy+=(Math.random()-.5)*.4;
     c.vx*=.90;c.vy*=.90;
     c.x+=c.vx*sdt*40;c.y+=c.vy*sdt*40;
-    c.chomp+=dt*(nearDist<45?18:5);
+    if(c.eat>0)c.eat-=dt;
+    c.chomp+=dt*(c.eat>0?32:nearDist<45?18:5);   // mastica in fretta mentre inghiotte, un po' quando ha una preda vicina
     if(c.x<CLEFT.x+10){c.x=CLEFT.x+10;c.vx=Math.abs(c.vx);}
     if(c.x>CLEFT.x+CLEFT.w-10){c.x=CLEFT.x+CLEFT.w-10;c.vx=-Math.abs(c.vx);}
     if(c.y<14){c.y=14;c.vy=Math.abs(c.vy);}
     if(c.y>H-30){c.y=H-30;c.vy=-Math.abs(c.vy);}
-    if(Math.random()<pKill){for(const p of particles){if(p.state!=='free')continue;if(Math.hypot(p.x-c.x,p.y-c.y)<16){p.state='comt_destroy';p.timer=0;break;}}}
+    if(Math.random()<pKill){for(const p of particles){if(p.state!=='free')continue;if(Math.hypot(p.x-c.x,p.y-c.y)<18){p.state='comt_destroy';p.timer=0;p.eater=c;c.eat=0.45;c.eaten++;break;}}}
   }
 
   // Effetti visivi
@@ -431,13 +444,13 @@ function classifyTrend(){
 }
 
 // ───────────────────────── Comandi ─────────────────────────
-function setMode(m){if(m===mode||!MODES[m])return;mode=m;effD2=null;rebuildReceptors();rebuildDat1();}
+function setMode(m){if(m===mode||!MODES[m])return;mode=m;effD2=null;rebuildReceptors();rebuildDat1();rebuildComts();}
 function setStimulus(v){stimulus=Math.max(0,Math.min(1,v));}
 function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
+  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0};tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
   for(const k in subst){subst[k].t=0;subst[k].after=0;}

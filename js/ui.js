@@ -82,7 +82,7 @@ function renderToasts(){
 const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.snap,vesicles:C.dopa,axon:C.ap,terminal:C.snap,cleft:C.cleft,post:C.active,gauge:C.active,particle:C.dopa,dead:C.dead,rates:C.dopa};
 const TIPS={
   dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
-  comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt})}),
+  comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt,n:comts.length})}),
   d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:baseD2(),sens:Math.round(d2Sens*100)}):''})}),
   d2bar:()=>({t:T('tip.d2bar.t'),c:C.d2,b:T('tip.d2bar.b',{rec:effectiveD2(),full:baseD2(),ref:D2_REF,max:D2_MAX})}),
   age:()=>({t:T('tip.age.t'),c:C.active,b:T('tip.age.b',{age,full:baseD2()})}),
@@ -102,11 +102,11 @@ const TIPS={
     b:T('tip.post.b')+(n?T('tip.post.state',{state:n.active?T('u.state.receptive'):T('u.state.silent'),sig:Math.round(n.signal/thresholdNow()*100)}):'')};},
   gauge:h=>{const n=postNeurons[h.ni||0];return {t:T('tip.gauge.t'),c:C.active,
     b:T('tip.gauge.b',{hl:fmtN(halfLifeNow(),2),now:n?T('tip.gauge.now',{sig:Math.round(n.signal/thresholdNow()*100)}):''})};},
-  particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy';
+  particle:h=>{const p=h.p,st=p?p.state:'free',dead=st==='degrade'||st==='comt_destroy'||st==='expire';
     const k=dead?'dead':st==='bound'?'bound':st==='reuptake'?'reuptake':st==='recycle'?'recycle':'free';
     return {t:T('tip.particle.'+k),c:dead?C.dead:C.dopa,b:T('tip.particle.b',{age:p&&!dead?T('tip.particle.age',{age:fmt1(p.age)}):''})};},
-  dead:()=>({t:T('tip.dead.t'),c:C.dead,b:T('tip.dead.b',{dead:stats.maob+stats.comt})}),
-  rates:()=>({t:T('tip.rates.t'),c:C.dopa,b:T('tip.rates.b',{rel:displayRelRate,reab:displayReabRate,dead:displayDeadRate,free:freeCount(),binds:stats.binds,rec:stats.recycled,deadTot:stats.maob+stats.comt})}),
+  dead:()=>({t:T('tip.dead.t'),c:C.dead,b:T('tip.dead.b',{dead:stats.maob+stats.comt+stats.lost})}),
+  rates:()=>({t:T('tip.rates.t'),c:C.dopa,b:T('tip.rates.b',{rel:displayRelRate,reab:displayReabRate,dead:displayDeadRate,free:freeCount(),binds:stats.binds,rec:stats.recycled,deadTot:stats.maob+stats.comt+stats.lost})}),
   'mode-adhd':()=>({t:T('tip.mode-adhd.t'),c:C.adhd,b:T('tip.mode-adhd.b')}),
   'mode-normal':()=>({t:T('tip.mode-normal.t'),c:C.active,b:T('tip.mode-normal.b')}),
   stimulus:()=>({t:T('tip.stimulus.t'),c:C.dopa,b:T('tip.stimulus.b')}),

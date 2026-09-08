@@ -238,7 +238,7 @@ function drawTrails(){
     tctx.globalCompositeOperation='source-over';
     const s=sprite(mixHex(C.dopa,'#ffffff',.35),1.1,3.2),sz=s.size;
     for(const p of particles){
-      if(p.state==='bound'||p.state==='degrade'||p.state==='comt_destroy')continue;
+      if(p.state==='bound'||p.state==='degrade'||p.state==='comt_destroy'||p.state==='expire')continue;
       const dx=p.x-p.hx,dy=p.y-p.hy,d=Math.hypot(dx,dy);
       if(d<1.2)continue;
       const speed=Math.min(1,(d-1)/7);                       // intensità: 0 se lenta, 1 in volo
@@ -259,18 +259,24 @@ function drawTrails(){
 function drawParticles(){
   const sFree=sprite(C.dopa,3.2,9),sBound=sprite(C.dopa,4.6,15),sDead=sprite(C.dead,3.2,9);
   for(const p of particles){
-    const dead=p.state==='degrade'||p.state==='comt_destroy';
+    if(p.state==='comt_destroy')continue;   // la disegna drawCOMT sopra l'enzima che la inghiotte
+    const dead=p.state==='degrade';
     if(p.state==='bound')blit(sBound,p.x,p.y,.9+.1*Math.sin(now*20));
     else blit(dead?sDead:sFree,p.x,p.y,p.alpha);
   }
 }
 
+// COMT: Pac-Man che si gonfia e mastica in fretta mentre inghiotte una molecola; sotto, quante ne ha mangiate
 function drawCOMT(){
   const s=sprite(C.comt,1,13);
-  for(const c of comts){blit(s,c.x,c.y,.45);ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.atan2(c.vy,c.vx));
+  for(const c of comts){const k=c.eat>0?c.eat/0.45:0,sc=1+.35*k;
+    blit(s,c.x,c.y,.45+.45*k);ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.atan2(c.vy,c.vx));ctx.scale(sc,sc);
     const m=.12+.55*(.5+.5*Math.sin(c.chomp));
     ctx.beginPath();ctx.arc(0,0,7.5,m,6.283-m);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=C.comt;ctx.fill();
-    ctx.beginPath();ctx.arc(1.5,-3.2,1.5,0,6.283);ctx.fillStyle='#0a0a1a';ctx.fill();ctx.restore();}
+    ctx.beginPath();ctx.arc(1.5,-3.2,1.5,0,6.283);ctx.fillStyle='#0a0a1a';ctx.fill();ctx.restore();
+    for(const p of particles)if(p.eater===c&&p.state==='comt_destroy')blit(sprite(C.dead,3.2,9),p.x,p.y,p.alpha);   // la preda, sopra la bocca
+    if(c.eaten){ctx.save();ctx.font='700 8.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=3;ctx.fillStyle='rgba(255,136,51,.9)';ctx.fillText('\u2715'+c.eaten,c.x,c.y+10);ctx.restore();}
+  }
 }
 
 function drawFX(){
