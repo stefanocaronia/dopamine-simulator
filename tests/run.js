@@ -62,6 +62,10 @@ reset({mode:'adhd',stim:0.1});run(10);M.startMph();run(1);s=S();
 within('methylphenidate: DAT1 block',s.block,0.84,0.86);within('methylphenidate: DAT1 speed x0.3',s.dsp,0.29,0.31);
 const mph=rate(run,20);ok('methylphenidate lifts ADHD 10% receptive fraction',mph.rec>a10.rec+0.15,`${fmt(mph.rec)} vs ${fmt(a10.rec)}`);
 G('mphTimer=0.1;');run(1);s=S();within('methylphenidate rebound: DAT1 speed x1.3',s.dsp,1.29,1.31);ok('rebound is timed (15 s)',s.reb>13&&s.reb<15,fmt(s.reb));
+// under the drug the transporters must sit barred, not keep reaching out: share of frames with an arm out, with vs without
+function armsOut(sec){const D=G('dat1s'),n=Math.round(sec/DT);let c=0;for(let i=0;i<n;i++){M.update(DT);for(const d of D)if(d.arm>0)c++;}return c/n/D.length;}   // mean share of transporters with the arm out
+reset({mode:'adhd',stim:0.3});run(10);const armsFree=armsOut(15);reset({mode:'adhd',stim:0.3});run(10);M.startMph();run(1);const armsMph=armsOut(15);
+ok('methylphenidate: transporters reach out far less (<=40% of the drug-free share)',armsMph<=armsFree*0.4,`${fmt(armsMph)} vs ${fmt(armsFree)}`);
 reset({stim:0.1});run(10);M.startExercise();run(5);s=S();
 within('exercise: bursts/s (+1.5)',s.b,1.3,2.4);within('exercise: release/s at 10%',s.rel,14,26);ok('exercise active',s.exer);
 reset({stim:0.1});run(5);M.toggleScroll();run(20);s=S();

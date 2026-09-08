@@ -223,8 +223,8 @@ function drawDAT1(){
   // Trasportatori bloccati (metilfenidato o cocaina): spenti e con una sbarra del colore della sostanza
   const blk=datBlock(),blkColor=subst.coc.t>0?C.coc:C.mph,sBlk=blk>0?sprite(blkColor,3,13):null;
   for(const d of dat1s){ctx.save();
-    const act=d.state!=='idle';
-    if(sBlk)blit(sBlk,d.x,d.y,.35);
+    const act=d.state==='reaching'||d.state==='pulling',occupied=d.state==='blocked';
+    if(sBlk)blit(sBlk,d.x,d.y,occupied?.7:.35);   // occupato dal farmaco adesso: alone più forte del colore della sostanza
     if(act)blit(sActive,d.x,d.y,.7);
     roundRect(d.x-7,d.y-9,13,18,4);ctx.fillStyle=act?'#3a1d6e':'#241447';ctx.fill();
     ctx.strokeStyle=act?'#c98cff':C.dat;ctx.lineWidth=1.5;ctx.stroke();

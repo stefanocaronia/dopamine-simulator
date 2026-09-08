@@ -401,17 +401,17 @@ function update(dt){
   for(const d of dat1s){
     if(d.state==='idle'){let best=null,bestD=Infinity;
       for(const p of particles){if(p.state!=='free'||p.immune>0)continue;const dist=Math.hypot(p.x-d.x,p.y-d.y);if(dist<bestD&&p.x>d.x-10&&dist<CLEFT.w*2){bestD=dist;best=p;}}
-      if(best){d.target=best;d.state='reaching';d.timer=0;}
+      // Trasportatore occupato dal farmaco (metilfenidato, cocaina): la quota bloccata non allunga il braccio, resta
+      // sbarrata e ferma per un po' e poi riprova. Prima il fallimento era deciso all'arrivo del braccio, e sullo
+      // schermo i DAT1 bloccati continuavano a lanciare righe viola
+      if(best){const blk=datBlock();if(blk>0&&Math.random()<blk){d.state='blocked';d.timer=0;d.wait=0.6+Math.random()*0.8;}else{d.target=best;d.state='reaching';d.timer=0;}}
     }
+    if(d.state==='blocked'){d.timer+=sdt;if(d.timer>=d.wait){d.state='idle';d.timer=0;}}
     if(d.state==='reaching'){
       const spd=cfg.dat1Speed*datSpeedMult();
       d.timer+=sdt*spd;d.arm=Math.min(1,d.timer*2);
       if(d.target&&d.target.state!=='free'){d.state='idle';d.arm=0;d.target=null;continue;}
-      if(d.arm>=1&&d.target){
-        const blk=datBlock(),mphFail=blk>0&&Math.random()<blk;
-        if(mphFail){d.state='idle';d.arm=0;d.target=null;}
-        else{d.target.state='reuptake';d.target.target=reuptakeTarget(d.y);d.state='pulling';d.timer=0;rateReabCount++;}
-      }
+      if(d.arm>=1&&d.target){d.target.state='reuptake';d.target.target=reuptakeTarget(d.y);d.state='pulling';d.timer=0;rateReabCount++;}
     }
     if(d.state==='pulling'){d.timer+=sdt*cfg.dat1Speed*datSpeedMult();d.arm=Math.max(0,1-d.timer*2.5);if(d.arm<=0){d.state='idle';d.target=null;d.timer=0;}}
   }
