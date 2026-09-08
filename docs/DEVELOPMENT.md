@@ -55,6 +55,7 @@ Interventions:
 - **Tonic release**: 3 releases/s always present (`TONIC_RATE`, cost `TONIC_COST` = 0.03 per vesicle), multiplied by `releaseMult()` like the stimulus-driven release. It gives caffeine and methylphenidate something to act on at low stimulus.
 - **Pages**: `showPage()` in ui.js toggles the three `section.pg` blocks; `#mech`/`#bio` in the URL hash deep-link to the text pages; the main loop skips update/render while a text page is shown. Text pages are built by `renderDocs()` from dictionary keys `<prefix>.lead`, `<prefix>.N.t`, `<prefix>.N.b`; `{fig:name}` tokens are replaced by the SVG infographics of `js/figures.js` (labels via `fig.*` keys).
 - **Settings**: `loadSettings()`/`saveSettings()` keep brain, age, stimulus and time scale in `localStorage` (`dopa.settings`); the language has its own key `dopa.lang`.
+- **URL parameters for demos and screenshots** (main.js): `?stim=35` sets the stimulus (it wins over saved settings), `?warm=10` runs the model for 10 simulated seconds before the first frame so the synapse is not empty; `?lang=xx` picks the language. The README screenshot is `chrome --headless=new --window-size=1400,900 --virtual-time-budget=6000 --screenshot=... "http://localhost:8080/?lang=en&stim=35&warm=10"`, then downscaled to 1200 px.
 - **Age toast**: outside the adult reference band (age < 20 or ≥ 50) a persistent toast explains what changed (`t.age.young.*` / `t.age.old.*`, with the current D2 count and the release factor). Under 20 the model changes a lot (+1% per year) and there is the adolescence story to tell; at 40 the change is only 6% and there would be nothing to explain, from 50 on it starts to show.
 - **Age** (5–100, reference 30): `ageFactor()` scales both the baseline D2 count and the release rate (stimulus-driven and tonic), +1% per year below 30, −6% per decade above 30 (floor 0.5). Receptor count alone barely changed the outcome (free dopamine seeks free receptors), so the release side is what makes the slider visible.
 - **Depletion**: below `DEPLETE_FROM` = 20% of the reserve, `supply()` scales every release (stimulus, tonic, easy-reward bursts) linearly down to 0, so an empty reserve really silences the synapse instead of releasing at full rate whenever it creeps above 1%.
@@ -66,6 +67,24 @@ Interventions:
   - Cocaine: DAT1 block 95%, speed ×0.3 and extra release +14/s for 20 s, then DAT1 speed ×1.5 and threshold ×1.3 for 20 s; sleep debt ×2; D2 −2.5%/s.
   The extra release (`boost`) is independent of the stimulus, so the substances act even at rest; easy rewards stay at 12 cheap releases/s. Desensitization (`des`, in real seconds) runs for as long as the effect lasts, so one dose costs 16% (cannabis) to 50% (cocaine) of the receptors, and the bar visibly drops while the toast is up.
   Effects compose through `releaseMult()`, `datBlock()`, `datSpeedMult()`, `threshMult()`, `sleepMult()`, `synthMult()`; methylphenidate and caffeine go through the same functions.
+
+## 4b. Controls at a glance
+| Control | Effect |
+|---|---|
+| Neurotypical / ADHD | Switches the parameter set (neurotypical by default) |
+| Age | 5–100 years: scales baseline D2 and release, +1% per year under 30, −6% per decade over 30; a toast explains it under 20 and from 50 |
+| Stimulus | Novelty, challenge, fear: impulse frequency and release, up to 30/s on top of the 3/s tonic background |
+| Time | Simulation speed, 1× to 8× |
+| ☕ Caffeine | 25 s: threshold −20%, release +10%, halves the sleep-debt penalty (hatched in the Sleep bar); crash toast when it wears off |
+| 💊 ADHD medication | Methylphenidate, 30 s: 85% of reuptake attempts fail, DAT1 speed ×0.3; sleep debt ×1.5; 15 s rebound with DAT1 ×1.3 |
+| 🏃 Exercise | 12 s: +15 releases/s at 0.02 cost each, synthesis +0.5/s (less with sleep debt) |
+| 💤 Sleep | Reset of debt, reserve, cleft and timers; D2 sensitivity recovers only +10% |
+| 📱 Easy rewards | Toggle: bursts of 12 cheap releases per simulated second; D2 sensitivity −0.02/s down to 30%, recovery +0.004/s once off |
+| 🚬 Nicotine | 20 s: +10 releases/s and ×1.30, D2 −1%/s; then a 15 s dip (×0.85); sleep debt ×1.2 |
+| 🌿 Cannabis | 40 s: +6/s and ×1.15, D2 −0.4%/s; then synthesis ×0.7 for 60 s |
+| 🍷 Alcohol | 30 s: +9/s and ×1.25, D2 −0.8%/s; then threshold ×1.2 for 30 s; sleep debt ×1.3 during and after |
+| ❄️ Cocaine | 20 s: DAT1 block 95%, speed ×0.3, +14/s, D2 −2.5%/s; then DAT1 ×1.5 and threshold ×1.3 for 20 s; sleep debt ×2 |
+| ⏸ / space bar | Pause and resume (only on the Simulation page) |
 
 ## 5. Running and testing
 - Any static server from the repo root (`python -m http.server 8080`), or open `index.html` directly.
@@ -99,7 +118,7 @@ Useful when driving the page from a script or from an AI assistant's browser pan
 Consistency check (node): load every dictionary and compare keys, `{placeholders}`, HTML tags and classes against `it`; all languages must have the same keys (253 in v3.5). The script used for v3.5 lives outside the repo; it loads `i18n/*.js` with a fake `window`, compares each language with `it` and lists the keys used by `T('...')` and `data-i18n`.
 
 ## 8. Roadmap and open items
-- [ ] Screenshots or a short GIF for the README (`docs/screenshots/`)
+- [x] Screenshot for the README (`docs/screenshots/simulation.png`, taken with headless Chrome at 1400×900 and downscaled to 1200 px); a short GIF is still open
 - [ ] Native review of the machine-assisted translations (es, fr, de, pt, ru, zh, ja, ko, ar)
 - [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); true phasic bursts (trains of impulses) distinct from the tonic rate; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights; "raw materials" (diet, iron) as a synthesis multiplier and chronic stress (short-term release boost, long-term D2 loss) as new environmental factors
 - [ ] Scrolling refinements: variable-reward schedule, cue learning (anticipation bursts before the reward), a visible D2 sensitivity gauge

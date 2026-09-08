@@ -12,5 +12,12 @@ function loop(ts){
   requestAnimationFrame(loop);
 }
 detectLang();applyI18n();initUI();resizeCanvas();
+// Parametri di URL per demo e screenshot: ?stim=35 imposta lo stimolo (vince sulle impostazioni salvate),
+// ?warm=8 fa girare il modello per 8 secondi simulati prima del primo frame, così la sinapsi non parte vuota
+try{
+  const q=new URLSearchParams(location.search),st=parseFloat(q.get('stim')),warm=parseFloat(q.get('warm'));
+  if(!isNaN(st)){setStimulus(st/100);const el=$('stimulus');el.value=Math.round(stimulus*100);$('stim-val').textContent=el.value+'%';syncRange(el,+el.value,0,100);}
+  if(warm>0&&ready)for(let i=0;i<Math.min(warm,60)*60;i++)update(1/60);
+}catch(e){}
 window.addEventListener('resize',resizeCanvas);
 lastT=performance.now();requestAnimationFrame(loop);
