@@ -223,20 +223,30 @@ function drawDAT1(){
     ctx.restore();}
 }
 
-// Scie: buffer a persistenza che sbiadisce ogni frame; i salti lunghi (alte velocità) lasciano solo un punto,
-// così non si formano linee di collegamento tra un frame e l'altro
+// Scie: polvere di scintille. Ogni molecola in movimento semina, lungo il tratto percorso nel frame, piccoli punti
+// luminosi radi, di dimensione casuale e con dispersione laterale che cresce con la velocità; il buffer sbiadisce
+// ogni frame. Le molecole lente (diffusione) non lasciano quasi nulla, quelle in volo una breve coda di scintille
+// che si dissolve: niente segmenti che le collegano da un frame all'altro
 function drawTrails(){
   if(!paused){
-    tctx.globalCompositeOperation='destination-out';tctx.fillStyle='rgba(0,0,0,.2)';tctx.fillRect(0,0,W,H);
+    tctx.globalCompositeOperation='destination-out';tctx.fillStyle='rgba(0,0,0,.24)';tctx.fillRect(0,0,W,H);
     tctx.globalCompositeOperation='source-over';
-    tctx.lineWidth=2.4;tctx.lineCap='round';tctx.strokeStyle='rgba(0,255,136,.45)';tctx.fillStyle='rgba(0,255,136,.45)';
+    const s=sprite(mixHex(C.dopa,'#ffffff',.35),1.1,3.2),sz=s.size;
     for(const p of particles){
       if(p.state==='bound'||p.state==='degrade'||p.state==='comt_destroy')continue;
-      const d=Math.hypot(p.x-p.hx,p.y-p.hy);
-      if(d<.8)continue;
-      if(d<26){tctx.beginPath();tctx.moveTo(p.hx,p.hy);tctx.lineTo(p.x,p.y);tctx.stroke();}
-      else{tctx.beginPath();tctx.arc(p.x,p.y,1.5,0,6.283);tctx.fill();}
+      const dx=p.x-p.hx,dy=p.y-p.hy,d=Math.hypot(dx,dy);
+      if(d<1.2)continue;
+      const speed=Math.min(1,(d-1)/7);                       // intensità: 0 se lenta, 1 in volo
+      const n=Math.min(7,Math.max(1,Math.round(d/3.5)));     // una scintilla ogni ~3,5 px di tratto
+      const px=-dy/d,py=dx/d,spread=.5+Math.min(2,d*.1);     // dispersione perpendicolare al moto
+      for(let i=0;i<n;i++){
+        if(Math.random()<.3)continue;                        // rade, con vuoti
+        const t=(i+Math.random())/n,j=(Math.random()-.5)*2*spread,k=.6+Math.random()*.7;
+        tctx.globalAlpha=(.3+Math.random()*.45)*speed*p.alpha;
+        tctx.drawImage(s.c,p.hx+dx*t+px*j-sz*k/2,p.hy+dy*t+py*j-sz*k/2,sz*k,sz*k);
+      }
     }
+    tctx.globalAlpha=1;
   }
   ctx.drawImage(trail,0,0,W,H);
 }
