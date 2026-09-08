@@ -60,7 +60,9 @@ let relAccum=0,tonicAccum=0,now=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
 // e stato con isteresi (trendState: full | down | up | hold) per evitare sfarfallii nei testi
 let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
-// Neuroni recettivi: media lenta del conteggio (activeAvg) e valore mostrato campionato ogni secondo (activeShown)
+// Neuroni ricettivi: media lenta (~4 s) della quota di neuroni ricettivi (activeAvg, 0..1) e valore mostrato
+// campionato ogni secondo come percentuale di tempo a passi del 5% (activeShown). Un conteggio arrotondato
+// nascondeva le accensioni brevi (0,3 neuroni in media diventava "0/3")
 let activeAvg=0,activeShown=0;
 // Effetti visivi (non influenzano il modello)
 let pops=[],pulses=[],apPulses=[],motes=[],apAccum=0;
@@ -318,9 +320,9 @@ function update(dt){
   if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
   lastVes=vesCount;
   let nAct=0;for(const n of postNeurons)if(n.active)nAct++;
-  activeAvg+=(nAct-activeAvg)*Math.min(1,dt*0.6);
+  if(postNeurons.length)activeAvg+=(nAct/postNeurons.length-activeAvg)*Math.min(1,dt*0.25);
   trendTimer+=dt;
-  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=Math.round(activeAvg);}
+  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=Math.round(activeAvg*20)*5;}
 
   // Trasportatori DAT1: agganciano le particelle e le riportano dentro (il metilfenidato li rallenta e li fa fallire)
   for(const d of dat1s){

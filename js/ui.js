@@ -15,7 +15,7 @@ function trendText(){
 }
 function stimToast(){
   const v=Math.round(stimulus*100);
-  const P={rel:displayRelRate,act:T('u.receptive',{a:activeShown,n:postNeurons.length}),trend:trendText()};   // activeShown: media, aggiornata ogni secondo
+  const P={rel:displayRelRate,act:T('u.receptive',{p:activeShown}),trend:trendText()};   // activeShown: % di tempo ricettivo, media lenta
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
 }
