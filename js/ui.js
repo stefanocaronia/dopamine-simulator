@@ -83,6 +83,7 @@ const TIPS={
   d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:baseD2(),sens:Math.round(d2Sens*100)}):''})}),
   d2bar:()=>({t:T('tip.d2bar.t'),c:C.d2,b:T('tip.d2bar.b',{rec:effectiveD2(),full:baseD2(),ref:D2_REF,max:D2_MAX})}),
   age:()=>({t:T('tip.age.t'),c:C.active,b:T('tip.age.b',{age,full:baseD2()})}),
+  kid:()=>({t:T('tip.kid.t'),c:'#7fffc8',b:T('tip.kid.b')}),
   nic:()=>({t:T('tip.nic.t'),c:C.nic,b:T('tip.nic.b')}),
   can:()=>({t:T('tip.can.t'),c:C.can,b:T('tip.can.b')}),
   alc:()=>({t:T('tip.alc.t'),c:C.alc,b:T('tip.alc.b')}),
@@ -200,7 +201,7 @@ const SETTINGS_KEY='dopa.settings';
 let saveTimer=0;
 function loadSettings(){
   let o=null;try{o=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');}catch(e){}
-  if(!o||typeof o!=='object')return;
+  if(!o||typeof o!=='object'){if(kidMode)setAge(KID_AGE);return;}   // prima visita in modalità ragazzi: età di un ragazzo
   if(MODES[o.mode])setMode(o.mode);
   if(typeof o.age==='number')setAge(o.age);
   if(typeof o.stim==='number')setStimulus(o.stim);
@@ -211,7 +212,21 @@ function saveSettings(){
   saveTimer=setTimeout(()=>{try{localStorage.setItem(SETTINGS_KEY,JSON.stringify({mode,age,stim:stimulus,speed:speedMul}));}catch(e){}},150);
 }
 
-// ───────────────────────── Pagine (Simulazione / Come funziona / Per i biologi) ─────────────────────────
+// ───────────────────────── Modalità ragazzi ─────────────────────────
+// Nasconde le sostanze (CSS su body.kid), usa i testi @kid, toglie la sezione "Le sostanze" e fa partire l'età da 15 anni.
+// Cambia anche l'URL (?kid=1) così il link si può condividere e si apre già in questa modalità.
+const KID_AGE=15,KID_HIDE=new Set(['mech.7']);
+function setKidMode(on){
+  kidMode=!!on;
+  try{localStorage.setItem('dopa.kid',kidMode?'1':'0');}catch(e){}
+  try{const u=new URL(location.href);if(kidMode)u.searchParams.set('kid','1');else u.searchParams.delete('kid');history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
+  setAge(kidMode?KID_AGE:AGE_REF);
+  const ageEl=$('age');ageEl.value=age;$('age-val').textContent=age;syncRange(ageEl,age,5,100);
+  if(kidMode)for(const k in subst){subst[k].t=0;subst[k].after=0;}   // niente sostanze attive quando si passa ai ragazzi
+  saveSettings();applyI18n();updateHUD();
+}
+
+// ───────────────────────── Pagine (Simulazione / Come funziona / Modello e realtà) ─────────────────────────
 let page='sim';
 const PAGES=['sim','mech','bio'];
 // Le pagine di testo sono sequenze di sezioni nel dizionario: <prefisso>.lead, poi <prefisso>.N.t (titolo) e <prefisso>.N.b (corpo HTML)
@@ -219,7 +234,7 @@ function renderDocs(){
   for(const [id,pre] of [['page-mech','mech'],['page-bio','bio']]){
     const el=$(id);if(!el)continue;
     let html='<p class="lead">'+T(pre+'.lead')+'</p>';
-    for(let i=1;i<40;i++){const k=pre+'.'+i+'.t';if(I18N.it[k]==null)break;html+='<section><h2>'+T(k)+'</h2>'+T(pre+'.'+i+'.b')+'</section>';}
+    for(let i=1;i<40;i++){const k=pre+'.'+i+'.t';if(I18N.it[k]==null)break;if(kidMode&&KID_HIDE.has(pre+'.'+i))continue;html+='<section><h2>'+T(k)+'</h2>'+T(pre+'.'+i+'.b')+'</section>';}
     el.innerHTML=withFigures(html);
   }
 }
@@ -265,6 +280,7 @@ function initUI(){
   ageEl.value=age;$('age-val').textContent=age;syncRange(ageEl,age,5,100);
   ageEl.addEventListener('input',e=>{setAge(+e.target.value);$('age-val').textContent=e.target.value;syncRange(ageEl,+e.target.value,5,100);saveSettings();});
   $('btn-exercise').addEventListener('click',startExercise);
+  $('kid-btn').addEventListener('click',()=>setKidMode(!kidMode));
   initPages();
   // Selettore lingua a tendina
   buildLangMenu();

@@ -12,6 +12,7 @@ An interactive, educational simulation of a dopamine synapse. Watch dopamine get
 - Addictions: easy rewards (scrolling, gaming, gambling…), nicotine, cannabis, alcohol, cocaine, each with its after-effect and its cost in receptors
 - Read what is happening: live state cards under the canvas and a tooltip on every element
 - Two more pages: **How it works** (short sections, infographics, glossary) and **Model vs reality** (what is simplified and why)
+- Kids mode (🧒 in the header, or `?kid=1` in a shared link): no substances, kid-friendly examples, age starting at 15
 - Eleven languages, remembered settings, no account, no tracking
 
 ## Run it locally

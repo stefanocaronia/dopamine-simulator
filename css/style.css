@@ -18,7 +18,14 @@ body{background:radial-gradient(1100px 600px at 35% -10%,#0f1a2c 0%,var(--bg) 60
 h1{font-size:clamp(1.55rem,2.6vw,2.35rem);line-height:1.08;font-weight:800;letter-spacing:-.015em;background:linear-gradient(90deg,#f4f8fc 0%,#bfe3ff 55%,#7fffc8 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:2px}
 .sub{margin-top:6px;color:var(--muted);font-size:.9rem;line-height:1.35;max-width:70ch}
 
-/* ── Selettore lingua ── */
+/* ── Strumenti nell'header: modalità ragazzi e lingua ── */
+.tools{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.kid-btn{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;border:1px solid var(--line-2);background:rgba(18,27,42,.85);color:var(--muted);font-weight:700;font-size:.78rem;font-family:inherit;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.kid-btn:hover{border-color:rgba(127,255,200,.5);color:var(--text)}
+.kid-btn[aria-pressed=true]{background:rgba(127,255,200,.14);border-color:rgba(127,255,200,.6);color:#7fffc8}
+.kid-btn .ki{font-size:1rem;line-height:1}
+/* modalità ragazzi: via le sostanze */
+body.kid #btn-nic,body.kid #btn-can,body.kid #btn-alc,body.kid #btn-coc{display:none}
 .lang{position:relative;flex-shrink:0}
 .lang-btn{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 8px;border-radius:10px;border:1px solid var(--line-2);background:rgba(18,27,42,.85);color:var(--text);font-weight:700;font-size:.78rem;font-family:inherit;letter-spacing:.5px;cursor:pointer;transition:border-color .2s}
 .lang-btn:hover,.lang-btn[aria-expanded=true]{border-color:rgba(0,229,255,.5)}
@@ -126,7 +133,7 @@ footer.credits .brand-name{color:var(--muted);font-weight:700;letter-spacing:.2p
 footer.credits .brand-name small{font-weight:600;color:var(--dim);margin-inline-start:2px}
 
 @media(max-width:960px){#app{grid-template-columns:1fr}#sidebar{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}}
-@media(max-width:600px){.top{flex-direction:column;align-items:stretch;gap:10px}.lang{align-self:flex-end}.logo{width:52px;height:52px}}
+@media(max-width:600px){.top{flex-direction:column;align-items:stretch;gap:10px}.tools{align-self:flex-end}.logo{width:52px;height:52px}}
 
 /* ── Pagine (schede sotto il titolo) ── */
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto;scrollbar-width:none}

@@ -19,13 +19,25 @@ const LANG_META=[
 const LANGS=LANG_META.map(l=>l.code);
 const LOCALE=Object.fromEntries(LANG_META.map(l=>[l.code,l.locale]));
 let lang='it';
+// Modalità ragazzi: i testi possono avere una variante <chiave>@kid (niente sostanze, esempi adatti); la attiva ui.js
+let kidMode=false;
 function langMeta(code){return LANG_META.find(l=>l.code===code)||LANG_META[0];}
 
 function T(key,params){
   const d=I18N[lang]||{},en=I18N.en||{},it=I18N.it||{};
-  let s=d[key]!=null?d[key]:en[key]!=null?en[key]:it[key]!=null?it[key]:key;
+  const look=k=>d[k]!=null?d[k]:en[k]!=null?en[k]:it[k]!=null?it[k]:null;
+  let s=kidMode?look(key+'@kid'):null;   // in modalità ragazzi vince la variante @kid, se esiste
+  if(s==null)s=look(key);
+  if(s==null)s=key;
   if(params)for(const k in params)s=s.split('{'+k+'}').join(params[k]);
   return s;
+}
+// ?kid=1 nell'URL vince (link condivisibile), altrimenti l'ultima scelta salvata
+function detectKid(){
+  let q=null,saved=null;
+  try{q=new URLSearchParams(location.search).get('kid');}catch(e){}
+  try{saved=localStorage.getItem('dopa.kid');}catch(e){}
+  kidMode=q!=null?(q==='1'||q==='true'):saved==='1';
 }
 function fmtN(x,d){return Number(x).toLocaleString(LOCALE[lang]||'en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
 function fmt1(x){return fmtN(x,1);}
@@ -51,6 +63,8 @@ function applyI18n(){
   const btn=$('lang-btn');
   if(btn){btn.querySelector('use').setAttribute('href','#flag-'+lang);btn.querySelector('.lang-code').textContent=lang.toUpperCase();btn.setAttribute('aria-label',m.name);}
   document.querySelectorAll('#lang-menu li').forEach(li=>{const on=li.dataset.lang===lang;li.classList.toggle('is-on',on);li.setAttribute('aria-selected',String(on));});
+  document.body.classList.toggle('kid',kidMode);
+  const kb=$('kid-btn');if(kb)kb.setAttribute('aria-pressed',String(kidMode));
   if(typeof renderDocs==='function')renderDocs();   // pagine di testo (ui.js)
 }
 function setLang(l){

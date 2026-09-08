@@ -11,7 +11,7 @@ function loop(ts){
   }
   requestAnimationFrame(loop);
 }
-detectLang();applyI18n();initUI();resizeCanvas();
+detectLang();detectKid();applyI18n();initUI();resizeCanvas();
 // Parametri di URL per demo e screenshot: ?stim=35 imposta lo stimolo (vince sulle impostazioni salvate),
 // ?warm=8 fa girare il modello per 8 secondi simulati prima del primo frame, così la sinapsi non parte vuota
 try{
