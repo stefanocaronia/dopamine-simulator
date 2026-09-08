@@ -163,12 +163,17 @@ function drawPostCells(){
     const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
     if(pct>0.003){ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=n.active?C.active:'#3d6a8a';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
-    const ca=Math.cos(ta),sa=Math.sin(ta);
-    ctx.beginPath();ctx.moveTo(cx+ca*(R-lw-1),ncy+sa*(R-lw-1));ctx.lineTo(cx+ca*(R+lw+1),ncy+sa*(R+lw+1));ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.stroke();
+    // Tacca della soglia: bordo scuro sotto e bianco con alone sopra, così si stacca sia dall'anello vuoto sia dal riempimento
+    const ca=Math.cos(ta),sa=Math.sin(ta),t0=R-lw-3,t1=R+lw+3;
+    ctx.save();ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(cx+ca*t0,ncy+sa*t0);ctx.lineTo(cx+ca*t1,ncy+sa*t1);ctx.strokeStyle='rgba(5,9,16,.9)';ctx.lineWidth=5.5;ctx.stroke();
+    ctx.shadowColor='rgba(255,255,255,.85)';ctx.shadowBlur=6;ctx.strokeStyle='#ffffff';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.restore();
     if(R>=22){
       if(n.active)label(T('cv.receptive'),cx,ncy,'800 10px',C.active,C.active,2*R-12);else label(T('cv.silent'),cx,ncy,'600 10px','#4f6a8c',null,2*R-12);
-      ctx.save();ctx.font='600 8.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
-      ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillText(T('cv.threshold'),cx+ca*(R+lw+7),ncy+sa*(R+lw+7)+(Math.abs(ca)<=0.25?(sa>0?6:-6):0));ctx.restore();
+      ctx.save();ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
+      ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;ctx.fillStyle='rgba(255,255,255,.88)';
+      ctx.fillText(T('cv.threshold'),cx+ca*(R+lw+9),ncy+sa*(R+lw+9)+(Math.abs(ca)<=0.25?(sa>0?7:-7):0));ctx.restore();
     }
   }
   // Recettori D2: tasche aperte verso la fessura, incastonate nella membrana.
