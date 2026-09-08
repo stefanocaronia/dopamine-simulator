@@ -213,9 +213,9 @@ function saveSettings(){
 }
 
 // ───────────────────────── Modalità ragazzi ─────────────────────────
-// Nasconde le sostanze (CSS su body.kid), usa i testi @kid, toglie la sezione "Le sostanze" e fa partire l'età da 15 anni.
+// Nasconde le sostanze (CSS su body.kid), usa i testi @kid, toglie la sezione "Le sostanze" e fa partire l'età da 12 anni.
 // Cambia anche l'URL (?kid=1) così il link si può condividere e si apre già in questa modalità.
-const KID_AGE=15,KID_HIDE=new Set(['mech.7']);
+const KID_AGE=12,KID_HIDE=new Set(['mech.7']);
 function setKidMode(on){
   kidMode=!!on;
   try{localStorage.setItem('dopa.kid',kidMode?'1':'0');}catch(e){}

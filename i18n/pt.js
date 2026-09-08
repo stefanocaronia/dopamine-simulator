@@ -43,7 +43,7 @@ I18N.pt={
   't.age.old.b':'<p>Aos {age} anos os receptores <i class="c-d2">D2</i> caíram para {full} por neurônio e a liberação está em {rel}: para o mesmo sinal são necessários estímulos mais fortes.</p><p>Na realidade a queda é lenta (cerca de 6% por década) e é compensada por experiência e hábitos. Quando os neurônios dopaminérgicos morrem em massa é a doença de Parkinson, que aqui não é simulada.</p>',
   'kid.btn':'Crianças',
   'tip.kid.t':'🧒 Modo crianças',
-  'tip.kid.b':'<p>Para mostrar o mecanismo a uma criança: as substâncias somem, as <i class="c-scroll">recompensas fáceis</i> ficam (scrolling, videogames), os textos se adaptam e a idade começa em 15 anos. O modelo não muda.</p><p>O endereço da página muda (<b>?kid=1</b>): copie e compartilhe, ele já abre neste modo.</p>',
+  'tip.kid.b':'<p>Para mostrar o mecanismo a uma criança: as substâncias somem, as <i class="c-scroll">recompensas fáceis</i> ficam (scrolling, videogames), os textos se adaptam e a idade começa em 12 anos. O modelo não muda.</p><p>O endereço da página muda (<b>?kid=1</b>): copie e compartilhe, ele já abre neste modo.</p>',
   'card.subst@kid':'Hábitos',
   'btn.scroll@kid':'<i>📱</i><span>Recompensas fáceis</span><small>scrolling, videogames, doces…</small>',
   't.scroll.b@kid':'<p>Muito prazer, pouco esforço, agora: scrolling infinito, vídeos curtos, videogames com prêmios, doces e guloseimas. Rajadas baratas de <i class="c-dopa">dopamina</i> disparadas por <b>sinais</b> (notificações, novidade, prêmios surpresa): os neurônios acendem com facilidade.</p><p>Mas os <i class="c-d2">D2</i> diminuem: <b>{rec}</b> receptores de {full} por neurônio (sensibilidade {sens}%). É a <b>tolerância</b>. Pare e você verá que as coisas normais já não bastam.</p>',

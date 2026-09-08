@@ -43,7 +43,7 @@ I18N.en={
   't.age.old.b':'<p>At {age}, <i class="c-d2">D2</i> receptors are down to {full} per neuron and release is {rel}: stronger stimuli are needed for the same signal.</p><p>In reality the decline is slow (about 6% per decade) and experience and habits compensate for it. When dopamine neurons die en masse it is Parkinson\'s disease, which is not simulated here.</p>',
   'kid.btn':'Kids',
   'tip.kid.t':'🧒 Kids mode',
-  'tip.kid.b':'<p>To show the mechanism to a kid: the substances disappear, the <i class="c-scroll">easy rewards</i> stay (scrolling, video games), the texts adapt and the age starts at 15. The model does not change.</p><p>The page address changes (<b>?kid=1</b>): copy and share it, it opens straight in this mode.</p>',
+  'tip.kid.b':'<p>To show the mechanism to a kid: the substances disappear, the <i class="c-scroll">easy rewards</i> stay (scrolling, video games), the texts adapt and the age starts at 12. The model does not change.</p><p>The page address changes (<b>?kid=1</b>): copy and share it, it opens straight in this mode.</p>',
   'card.subst@kid':'Habits',
   'btn.scroll@kid':'<i>📱</i><span>Easy rewards</span><small>scrolling, video games, sweets…</small>',
   't.scroll.b@kid':'<p>Lots of pleasure, little effort, right now: endless scrolling, short videos, video games with prizes, sweets and snacks. Cheap bursts of <i class="c-dopa">dopamine</i> triggered by <b>cues</b> (notifications, novelty, surprise prizes): the neurons light up easily.</p><p>But the <i class="c-d2">D2</i> shrink: <b>{rec}</b> receptors out of {full} per neuron (sensitivity {sens}%). This is <b>tolerance</b>. Stop, and you will see that normal things are no longer enough.</p>',
