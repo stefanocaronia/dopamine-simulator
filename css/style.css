@@ -62,8 +62,10 @@ canvas{display:block;width:100%;height:100%;background:#080c14}
 .toast[data-key=mode]{flex:1.7 1 300px}
 .toast::before{content:'';position:absolute;inset-inline-start:0;top:0;bottom:0;width:3px;background:var(--tc);box-shadow:0 0 10px var(--tc)}
 .toast.out{animation:tout .22s ease-in forwards}
-.toast .tt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.82rem;font-weight:800;letter-spacing:.3px;color:var(--tc);margin-bottom:5px;text-shadow:0 0 12px var(--tc-glow)}
-.toast .tt small{font-weight:700;font-size:.74rem;opacity:.85;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Titolo del toast: icona e titolo restano sempre sulla stessa riga; se manca spazio va a capo il sottotitolo ("acceso da…") */
+.toast .tt{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px;font-size:.82rem;font-weight:800;letter-spacing:.3px;color:var(--tc);margin-bottom:5px;text-shadow:0 0 12px var(--tc-glow)}
+.toast .tt .tt-t{white-space:nowrap}
+.toast .tt small{font-weight:700;font-size:.74rem;opacity:.85;font-variant-numeric:tabular-nums;white-space:nowrap;margin-inline-start:auto}
 .tb{font-size:.8rem;line-height:1.45;color:#c3cfdd}
 .tb p+p{margin-top:5px}
 .tb b{color:#eef4fb;font-weight:700}
