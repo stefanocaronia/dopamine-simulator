@@ -3,6 +3,7 @@
 let lastT=0;
 function loop(ts){
   const dt=Math.min(.05,Math.max(0,(ts-lastT)/1000));lastT=ts;
+  if(page!=='sim'){requestAnimationFrame(loop);return;}   // nelle pagine di testo la simulazione resta ferma
   if(!ready)resizeCanvas();
   if(ready){
     try{if(!paused)update(dt);updateHover();render();updateHUD();renderToasts();}

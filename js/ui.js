@@ -14,8 +14,8 @@ function trendText(){
   return T('t.trend.hold',{tr:(tr>=0?'+':'')+fmt1(tr)});
 }
 function stimToast(){
-  const v=Math.round(stimulus*100),act=postNeurons.filter(n=>n.active).length;
-  const P={rel:displayRelRate,act:T('u.receptive',{a:act,n:postNeurons.length}),trend:trendText()};
+  const v=Math.round(stimulus*100);
+  const P={rel:displayRelRate,act:T('u.receptive',{a:activeShown,n:postNeurons.length}),trend:trendText()};   // activeShown: media, aggiornata ogni secondo
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
 }
@@ -30,11 +30,15 @@ function buildToasts(){
   else if(caffEndTimer>0)list.push({key:'caffend',c:C.caff,t:T('t.caffend.t'),b:T('t.caffend.b',{real,perc:Math.round(sleepDebt*CAFF_DEBT_MASK*100)})});
   if(mphActive)list.push({key:'mph',c:C.mph,t:T('t.mph.t'),s:T('u.sec',{n:Math.ceil(mphTimer)}),b:depleted?T('t.mph.depleted'):T('t.mph.b',{trend:trendText()})});
   else if(mphRebound>0)list.push({key:'mphre',c:C.tol,t:T('t.mphre.t'),s:T('u.sec',{n:Math.ceil(mphRebound)}),b:T('t.mphre.b')});
+  // Sostanze: mentre l'effetto dura, accanto al tempo si vedono i D2 che scendono
+  for(const k of ['nic','can','alc','coc']){const s=subst[k];
+    if(s.t>0)list.push({key:k,c:C[k],t:T('t.'+k+'.t'),s:T('u.sec',{n:Math.ceil(s.t)})+' · '+T('u.d2',{rec:effectiveD2(),full:baseD2()}),b:T('t.'+k+'.b')});
+    else if(s.after>0)list.push({key:k+'-after',c:C.tol,t:T('t.'+k+'.after.t'),s:T('u.sec',{n:Math.ceil(s.after)}),b:T('t.'+k+'.after.b')});}
   if(exerciseActive)list.push({key:'exer',c:C.exer,t:T('t.exer.t'),s:T('u.sec',{n:Math.ceil(exerciseTimer)}),
     b:depleted?T('t.exer.depleted'):T('t.exer.b')+(sleepDebt>0.3?T('t.exer.sleep'):'')});
-  const sens=Math.round(d2Sens*100),D2={sens,rec:effectiveD2(),full:MODES[mode].d2Count};
-  if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:sens+'%',b:T('t.scroll.b',D2)});
-  else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:sens+'%',b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((0.92-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
+  const sens=Math.round(d2Sens*100),D2={sens,rec:effectiveD2(),full:baseD2()},d2s=T('u.d2',{rec:D2.rec,full:D2.full});
+  if(scrollActive)list.push({key:'scroll',c:C.scroll,t:T('t.scroll.t'),s:d2s,b:T('t.scroll.b',D2)});
+  else if(d2Sens<0.92)list.push({key:'tol',c:C.tol,t:T('t.tol.t'),s:d2s,b:T('t.tol.b',Object.assign({secs:Math.max(5,Math.round((0.92-d2Sens)/SCROLL_RECOVER/5)*5)},D2))});
   if(sleepDebt>0.3)list.push({key:'sleep',c:C.sleep,t:T('t.sleep.t'),s:caffeineActive?real+'% → '+perc+'%':real+'%',
     b:T('t.sleep.b',{thr:Math.round(perceivedDebt()*150)})+(caffeineActive?T('t.sleep.masked',{perc}):T('t.sleep.hint'))});
   if(low)list.push({key:'depl',c:C.dead,t:T('t.depl.t'),s:pct+'%',b:T('t.depl.b')});
@@ -72,7 +76,13 @@ const TIP_COLOR={dat1:C.dat,comt:C.comt,d2:C.d2,vmat2:C.vmat,maob:C.dead,snap:C.
 const TIPS={
   dat1:()=>{const cfg=MODES[mode];return {t:T('tip.dat1.t'),c:C.dat,b:T('tip.dat1.b',{n:cfg.dat1Count,speed:cfg.dat1Speed,reab:displayReabRate,blocked:mphActive?T('tip.dat1.blocked'):''})};},
   comt:()=>({t:T('tip.comt.t'),c:C.comt,b:T('tip.comt.b',{comt:stats.comt})}),
-  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:MODES[mode].d2Count,sens:Math.round(d2Sens*100)}):''})}),
+  d2:()=>({t:T('tip.d2.t'),c:C.d2,b:T('tip.d2.b',{binds:stats.binds,tol:d2Sens<0.99?T('tip.d2.tol',{rec:effectiveD2(),full:baseD2(),sens:Math.round(d2Sens*100)}):''})}),
+  d2bar:()=>({t:T('tip.d2bar.t'),c:C.d2,b:T('tip.d2bar.b',{rec:effectiveD2(),full:baseD2(),ref:D2_REF,max:D2_MAX})}),
+  age:()=>({t:T('tip.age.t'),c:C.active,b:T('tip.age.b',{age,full:baseD2()})}),
+  nic:()=>({t:T('tip.nic.t'),c:C.nic,b:T('tip.nic.b')}),
+  can:()=>({t:T('tip.can.t'),c:C.can,b:T('tip.can.b')}),
+  alc:()=>({t:T('tip.alc.t'),c:C.alc,b:T('tip.alc.b')}),
+  coc:()=>({t:T('tip.coc.t'),c:C.coc,b:T('tip.coc.b')}),
   vmat2:()=>({t:T('tip.vmat2.t'),c:C.vmat,b:T('tip.vmat2.b',{ratio:Math.round(MODES[mode].vmat2Ratio*100),rec:stats.recycled})}),
   maob:()=>({t:T('tip.maob.t'),c:C.dead,b:T('tip.maob.b',{maob:stats.maob,comt:stats.comt})}),
   snap:()=>({t:T('tip.snap.t'),c:C.snap,b:T('tip.snap.b',{rel:displayRelRate})}),
@@ -169,29 +179,89 @@ function updateHUD(){
   if(hudCache.ml!==ml){hudCache.ml=ml;mk.style.insetInlineStart=ml;}
   if(hudCache.mw!==mw){hudCache.mw=mw;mk.style.width=mw;}
   setWidth('scroll-fill',scrollActive?'100%':'0%');
+  for(const k of ['nic','can','alc','coc'])setWidth(k+'-fill',(subst[k].t>0?(subst[k].t/SUBST[k].dur*100).toFixed(1):0)+'%');
+  // Barra dei recettori D2: fondo scala = D2_MAX (neurotipico a 5 anni), tacca = base per cervello ed età, testo = recettori per neurone
+  const eff=effectiveD2(),base=baseD2();
+  setWidth('d2-fill',Math.min(100,eff/D2_MAX*100).toFixed(1)+'%');
+  const mkLeft=Math.min(100,base/D2_MAX*100).toFixed(1)+'%';
+  if(hudCache.d2mk!==mkLeft){hudCache.d2mk=mkLeft;$('d2-mark').style.insetInlineStart=mkLeft;}
+  setText('d2-count',String(eff));
   if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
   if(hudCache.mode!==mode){hudCache.mode=mode;document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('is-on',b.dataset.mode===mode));}
+}
+
+// ───────────────────────── Impostazioni salvate (localStorage) ─────────────────────────
+// Si ricordano cervello, età, stimolo e scala del tempo (la lingua ha la sua chiave in i18n.js). Lo stato della simulazione no.
+const SETTINGS_KEY='dopa.settings';
+let saveTimer=0;
+function loadSettings(){
+  let o=null;try{o=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');}catch(e){}
+  if(!o||typeof o!=='object')return;
+  if(MODES[o.mode])setMode(o.mode);
+  if(typeof o.age==='number')setAge(o.age);
+  if(typeof o.stim==='number')setStimulus(o.stim);
+  if(typeof o.speed==='number')setSpeed(o.speed);
+}
+function saveSettings(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{try{localStorage.setItem(SETTINGS_KEY,JSON.stringify({mode,age,stim:stimulus,speed:speedMul}));}catch(e){}},150);
+}
+
+// ───────────────────────── Pagine (Simulazione / Come funziona / Per i biologi) ─────────────────────────
+let page='sim';
+const PAGES=['sim','mech','bio'];
+// Le pagine di testo sono sequenze di sezioni nel dizionario: <prefisso>.lead, poi <prefisso>.N.t (titolo) e <prefisso>.N.b (corpo HTML)
+function renderDocs(){
+  for(const [id,pre] of [['page-mech','mech'],['page-bio','bio']]){
+    const el=$(id);if(!el)continue;
+    let html='<p class="lead">'+T(pre+'.lead')+'</p>';
+    for(let i=1;i<40;i++){const k=pre+'.'+i+'.t';if(I18N.it[k]==null)break;html+='<section><h2>'+T(k)+'</h2>'+T(pre+'.'+i+'.b')+'</section>';}
+    el.innerHTML=withFigures(html);
+  }
+}
+function showPage(p,push){
+  if(!PAGES.includes(p))p='sim';
+  page=p;
+  for(const q of PAGES){const el=$('page-'+q);if(el)el.hidden=q!==p;}
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.page===p)));
+  if(push!==false){try{history.replaceState(null,'',p==='sim'?location.pathname+location.search:'#'+p);}catch(e){}}
+  if(p==='sim'){if(!ready)resizeCanvas();}
+  else{hideTip();uiTip=null;canvasMouse.over=false;hover=null;}
+  window.scrollTo({top:0});
+}
+function initPages(){
+  renderDocs();
+  document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+  document.addEventListener('click',e=>{const a=e.target instanceof Element?e.target.closest('[data-page-link]'):null;if(a){e.preventDefault();showPage(a.dataset.pageLink);}});
+  window.addEventListener('hashchange',()=>showPage(location.hash.replace('#',''),false));
+  showPage(location.hash.replace('#',''),false);
 }
 
 // ───────────────────────── Controlli ─────────────────────────
 function syncRange(el,v,min,max){el.style.setProperty('--pct',((v-min)/(max-min)*100)+'%');}
 function initUI(){
+  loadSettings();
   const stimEl=$('stimulus'),speedEl=$('speed');
-  stimEl.addEventListener('input',e=>{stimulus=e.target.value/100;$('stim-val').textContent=e.target.value+'%';syncRange(stimEl,+e.target.value,0,100);});
-  speedEl.addEventListener('input',e=>{speedMul=parseFloat(e.target.value);$('speed-val').textContent=e.target.value+'×';syncRange(speedEl,speedMul,1,8);});
+  stimEl.addEventListener('input',e=>{setStimulus(e.target.value/100);$('stim-val').textContent=e.target.value+'%';syncRange(stimEl,+e.target.value,0,100);saveSettings();});
+  speedEl.addEventListener('input',e=>{setSpeed(parseFloat(e.target.value));$('speed-val').textContent=e.target.value+'×';syncRange(speedEl,speedMul,1,8);saveSettings();});
   stimEl.value=Math.round(stimulus*100);speedEl.value=speedMul;
   $('stim-val').textContent=stimEl.value+'%';$('speed-val').textContent=speedEl.value+'×';
   syncRange(stimEl,+stimEl.value,0,100);syncRange(speedEl,+speedEl.value,1,8);
-  document.querySelectorAll('#mode-seg button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+  document.querySelectorAll('#mode-seg button').forEach(b=>b.addEventListener('click',()=>{setMode(b.dataset.mode);saveSettings();}));
   $('btn-reset').addEventListener('click',()=>{resetSim();clearTrails();});
   $('btn-pause').addEventListener('click',togglePause);
   window.addEventListener('keydown',e=>{
-    if(e.code==='Space'&&!(e.target instanceof HTMLElement&&e.target.matches('button,input,select,textarea,a'))){e.preventDefault();togglePause();}
+    if(e.code==='Space'&&page==='sim'&&!(e.target instanceof HTMLElement&&e.target.matches('button,input,select,textarea,a'))){e.preventDefault();togglePause();}
   });
   $('btn-caffeine').addEventListener('click',startCaffeine);
   $('btn-mph').addEventListener('click',startMph);
   $('btn-scroll').addEventListener('click',toggleScroll);
+  for(const k of ['nic','can','alc','coc'])$('btn-'+k).addEventListener('click',()=>startSubst(k));
+  const ageEl=$('age');
+  ageEl.value=age;$('age-val').textContent=age;syncRange(ageEl,age,5,100);
+  ageEl.addEventListener('input',e=>{setAge(+e.target.value);$('age-val').textContent=e.target.value;syncRange(ageEl,+e.target.value,5,100);saveSettings();});
   $('btn-exercise').addEventListener('click',startExercise);
+  initPages();
   // Selettore lingua a tendina
   buildLangMenu();
   const lb=$('lang-btn'),lm=$('lang-menu');

@@ -49,9 +49,22 @@ Interventions:
 - **Caffeine** (25 s): adenosine A2A antagonism. Threshold × 0.8, release × 1.10, and it halves the sleep-debt penalty on the threshold (`perceivedDebt()`): the Sleep bar shows the perceived debt solid and the masked share hatched. No effect on DAT1. When it wears off with debt above 20%, a 5 s "caffeine worn off" toast shows the perceived debt jumping back.
 - **Methylphenidate** (30 s): DAT1 block. 85% of reuptake attempts fail, transporters move at 0.3× speed. Simulated side effects: sleep debt grows ×1.5 while active; less reuptake means less recycling (emergent); after the dose a 15 s rebound with DAT1 speed ×1.3.
 - **Exercise** (12 s): +15 releases/s at 0.02 cost each, synthesis +0.5/s (reduced by sleep debt).
-- **Scrolling** (toggle): one burst of 12 releases per simulated second at 0.03 cost each (cue-triggered, low effort). While on, D2 sensitivity `d2Sens` drops by 0.02/s down to 0.3; off, it recovers by 0.004/s. The effective receptor count per neuron is `round(d2Count × d2Sens)` (min 2) and `rebuildReceptors()` runs whenever it changes, so receptors visibly disappear and return. A "D2 tolerance" toast stays while `d2Sens < 0.92`.
+- **Easy rewards** (toggle, formerly "scrolling"): one burst of 12 releases per simulated second at 0.03 cost each (cue-triggered, low effort). While on, D2 sensitivity `d2Sens` drops by 0.02/s down to 0.3; off, it recovers by 0.004/s. The effective receptor count per neuron is `round(d2Count × d2Sens)` (min 2) and `rebuildReceptors()` runs whenever it changes, so receptors visibly disappear and return. A "D2 tolerance" toast stays while `d2Sens < 0.92`.
 - **Sleep**: reset of debt, reservoir, cleft and counters; tolerance recovers only +0.1.
 - **Sleep debt** grows with time awake at 0.0055 per simulated second (full in about 3 minutes), independent of the stimulus. It raises the threshold by ×(1 + 1.5 × perceived debt) and divides the signal half-life by (1 + 1.2 × debt).
+- **Tonic release**: 3 releases/s always present (`TONIC_RATE`, cost `TONIC_COST` = 0.03 per vesicle), multiplied by `releaseMult()` like the stimulus-driven release. It gives caffeine and methylphenidate something to act on at low stimulus.
+- **Pages**: `showPage()` in ui.js toggles the three `section.pg` blocks; `#mech`/`#bio` in the URL hash deep-link to the text pages; the main loop skips update/render while a text page is shown. Text pages are built by `renderDocs()` from dictionary keys `<prefix>.lead`, `<prefix>.N.t`, `<prefix>.N.b`; `{fig:name}` tokens are replaced by the SVG infographics of `js/figures.js` (labels via `fig.*` keys).
+- **Settings**: `loadSettings()`/`saveSettings()` keep brain, age, stimulus and time scale in `localStorage` (`dopa.settings`); the language has its own key `dopa.lang`.
+- **Age** (5–100, reference 30): `ageFactor()` scales both the baseline D2 count and the release rate (stimulus-driven and tonic), +1% per year below 30, −6% per decade above 30 (floor 0.5). Receptor count alone barely changed the outcome (free dopamine seeks free receptors), so the release side is what makes the slider visible.
+- **Depletion**: below `DEPLETE_FROM` = 20% of the reserve, `supply()` scales every release (stimulus, tonic, easy-reward bursts) linearly down to 0, so an empty reserve really silences the synapse instead of releasing at full rate whenever it creeps above 1%.
+- **D2 count**: `baseD2()` = d2Count × ageFactor, `effectiveD2()` = baseD2 × d2Sens (min 2). The D2 bar in the Brain card is full at `D2_MAX` = 15 (neurotypical at 5 years) with a tick at baseD2; the label shows effectiveD2.
+- **Substances** (`SUBST` in model.js, one dose per click, real-time timers; while the effect lasts `d2Sens` drops by `des` per real second):
+  - Nicotine: extra release +10/s and ×1.30 for 20 s, then ×0.85 for 15 s (dip); sleep debt ×1.2; D2 −1%/s.
+  - Cannabis: extra release +6/s and ×1.15 for 40 s, then synthesis ×0.7 for 60 s; D2 −0.4%/s.
+  - Alcohol: extra release +9/s and ×1.25 for 30 s, then threshold ×1.2 for 30 s; sleep debt ×1.3 during and after; D2 −0.8%/s.
+  - Cocaine: DAT1 block 95%, speed ×0.3 and extra release +14/s for 20 s, then DAT1 speed ×1.5 and threshold ×1.3 for 20 s; sleep debt ×2; D2 −2.5%/s.
+  The extra release (`boost`) is independent of the stimulus, so the substances act even at rest; easy rewards stay at 12 cheap releases/s. Desensitization (`des`, in real seconds) runs for as long as the effect lasts, so one dose costs 16% (cannabis) to 50% (cocaine) of the receptors, and the bar visibly drops while the toast is up.
+  Effects compose through `releaseMult()`, `datBlock()`, `datSpeedMult()`, `threshMult()`, `sleepMult()`, `synthMult()`; methylphenidate and caffeine go through the same functions.
 
 ## 5. Running and testing
 - Any static server from the repo root (`python -m http.server 8080`), or open `index.html` directly.
@@ -82,12 +95,12 @@ Useful when driving the page from a script or from an AI assistant's browser pan
 4. Add a `<symbol id="flag-xx" viewBox="0 0 3 2">` to the SVG sprite at the top of `index.html` (simple shapes, no external images: the page must work offline).
 5. Run the consistency check below; the menu builds itself from `LANG_META`.
 
-Consistency check (node): load every dictionary and compare keys and `{placeholders}` against `it`; all languages must have the same 155 keys.
+Consistency check (node): load every dictionary and compare keys, `{placeholders}`, HTML tags and classes against `it`; all languages must have the same keys (253 in v3.5). The script used for v3.5 lives outside the repo; it loads `i18n/*.js` with a fake `window`, compares each language with `it` and lists the keys used by `T('...')` and `data-i18n`.
 
 ## 8. Roadmap and open items
 - [ ] Screenshots or a short GIF for the README (`docs/screenshots/`)
 - [ ] Native review of the machine-assisted translations (es, fr, de, pt, ru, zh, ja, ko, ar)
-- [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); tonic baseline release at zero stimulus; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights
+- [ ] Biology, see `docs/fedelta-biologica.md`: presynaptic D2 autoreceptors (release inhibition when cleft dopamine is high); true phasic bursts (trains of impulses) distinct from the tonic rate; region selector (striatum vs prefrontal cortex) changing DAT, COMT and NET weights; "raw materials" (diet, iron) as a synthesis multiplier and chronic stress (short-term release boost, long-term D2 loss) as new environmental factors
 - [ ] Scrolling refinements: variable-reward schedule, cue learning (anticipation bursts before the reward), a visible D2 sensitivity gauge
 - [ ] Optional: docked-vesicle animation on release; D1 receptors
 - [ ] Accessibility: keyboard access to tooltips, reduced-motion mode
@@ -99,5 +112,7 @@ Consistency check (node): load every dictionary and compare keys and `{placehold
 - v3.1, 2026-09-07: biology corrections: caffeine as A2A antagonist, methylphenidate as DAT blocker, COMT weight reduced and declared a metaphor, MAO label, sleep debt grows with time awake
 - v3.2, 2026-09-07: perceived vs real sleep debt in the Sleep bar, caffeine crash toast, methylphenidate side effects and rebound, compulsive scrolling with D2 tolerance
 - v3.3, 2026-09-08: new header (logo, larger title, language dropdown with flags aligned to the content), grid layout, nine more languages (es, fr, de, pt, ru, zh, ja, ko, ar with RTL), footer with GitHub and coffee links, repository published on GitHub with Pages
+- v3.4, 2026-09-08: D2 receptor bar with baseline tick, age slider, "easy rewards" and "tolerance" wording, "ADHD medication" button, larger recycle/degrade icons, reservoir moved to the Brain card, Substances card (nicotine, cannabis, alcohol, cocaine) with after-effects and per-dose D2 cost
+- v3.5, 2026-09-08: footer with GitHub and heart icons, yellow full-height tick on the D2 bar, three pages (Simulation, How it works with SVG infographics and glossary, Model vs reality), notice that all values are indicative, wider layout with icon-left buttons, cards regrouped (Interventions: caffeine, medication, exercise, sleep; Addictions: easy rewards and substances), neurotypical by default and settings saved in localStorage, D2 bar with a fixed full scale (15), tonic background release, substances with stimulus-independent extra release and continuous D2 desensitization while the effect lasts (shown live in the substance toast), averaged receptive-neuron count, canvas cues (caffeine halo, barred DAT1, exercise tint, moving threshold tick), sleep also ends caffeine/medication/exercise, all texts rewritten for non-biologists and re-translated
 
 Earlier single-file versions can be retrieved with `git show <commit>:come-funziona-la-dopamina.html`.

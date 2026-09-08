@@ -22,22 +22,46 @@ const MPH_SLEEP_MULT=1.5,MPH_REBOUND_DUR=15,MPH_REBOUND_SPEED=1.3;
 const CAFF_END_TOAST=5;
 // Debito di sonno: cresce con il tempo di veglia (adenosina), non con lo stimolo. Pieno in ~3 minuti simulati
 const SLEEP_DEBT_RATE=0.0055;
+// Attività tonica: i neuroni dopaminergici scaricano sempre un po' (~4 Hz). Qui 3 rilasci/s di fondo a basso costo,
+// indipendenti dallo stimolo: danno a caffeina e farmaco qualcosa su cui agire anche a stimolo basso
+const TONIC_RATE=3,TONIC_COST=0.03;
+// Esaurimento: sotto il 20% di riserva il rilascio non si spegne di colpo, cala in proporzione alle vescicole rimaste
+const DEPLETE_FROM=0.20;
 // Scrolling compulsivo: raffiche di rilascio a basso costo scatenate da "segnali"; i D2 si riducono (tolleranza) e recuperano lentamente
 const SCROLL_BURST_RATE=1.0,SCROLL_BURST_N=12,SCROLL_COST=0.03,SCROLL_DESENS=0.02,SCROLL_RECOVER=0.004,D2_SENS_MIN=0.3,SLEEP_TOL_RECOVER=0.1;
-const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',stimLow:'#7fb8ff',stimHigh:'#ffb347'};
+// Età: i D2 sono più numerosi nell'infanzia e calano di ~6% per decennio dopo i 30 anni (30 = riferimento); D2_REF = adulto neurotipico
+// D2_MAX = massimo raggiungibile (neurotipico a 5 anni): è il fondo scala della barra dei recettori
+const AGE_REF=30,D2_REF=12,AGE_MIN=5,AGE_MAX=100;
+const D2_MAX=Math.round(D2_REF*(1+0.01*(AGE_REF-AGE_MIN)));
+// Sostanze (semplificazioni didattiche): durata dell'effetto in secondi reali, effetto successivo, costo in D2.
+// boost = rilascio aggiunto in molecole/s indipendente dallo stimolo (le droghe agiscono anche a riposo);
+// release = moltiplicatore del rilascio guidato dallo stimolo (le ricompense facili aggiungono ~12 rilasci/s).
+// des = desensibilizzazione dei D2 al secondo mentre l'effetto dura: la riduzione dei recettori è graduale,
+// non un salto per dose. Totale per dose = des × dur (nic 20%, can 16%, alc 24%, coc 50%).
+const SUBST={
+  nic:{dur:20,after:15,boost:10,release:1.30,afterRelease:0.85,des:0.010,sleep:1.2},
+  can:{dur:40,after:60,boost:6,release:1.15,afterSynth:0.7,des:0.004,sleep:1.0},
+  alc:{dur:30,after:30,boost:9,release:1.25,afterThresh:1.2,des:0.008,sleep:1.3},
+  coc:{dur:20,after:20,boost:14,release:1.0,datBlock:0.95,datSlow:0.3,afterDat:1.5,afterThresh:1.3,des:0.025,sleep:2.0}
+};
+const C={dopa:'#00ff88',dead:'#ff3355',dat:'#aa55ff',comt:'#ff8833',vmat:'#3388dd',d2:'#ffcc00',active:'#00e5ff',ap:'#ffe27a',snap:'#7aa8ff',cleft:'#8fa3bb',adhd:'#ff8833',caff:'#e07a2f',mph:'#ff5fa8',exer:'#3cb371',sleep:'#8e6fd1',scroll:'#9ecbff',tol:'#8a9bb5',stimLow:'#7fb8ff',stimHigh:'#ffb347',nic:'#d4b46a',can:'#9be36f',alc:'#c96f8f',coc:'#dfe9ff'};
 
 // ───────────────────────── Stato ─────────────────────────
-let mode='adhd',stimulus=0.10,speedMul=2,paused=false;
+let mode='normal',stimulus=0.10,speedMul=2,paused=false;
 let vesCount=MAX_VES,vesicles=[],particles=[],receptors=[],postNeurons=[],dat1s=[],comts=[];
 let stats={recycled:0,maob:0,comt:0,total:0,binds:0};
 let W=0,H=0,PRE={},CLEFT={},POST={},SNAP={},VMAT_Z={},MAO_Z={},TERM={};
 let caffeineTimer=0,caffeineActive=false,caffEndTimer=0,mphTimer=0,mphActive=false,mphRebound=0,exerciseTimer=0,exerciseActive=false,sleepDebt=0,sleepToastTimer=0;
 let scrollActive=false,scrollAccum=0,burstLeft=0,d2Sens=1,effD2=null;   // d2Sens: sensibilità/densità dei D2 (1 = normale)
+let age=AGE_REF;
+let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
 let rateWindow=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0;
-let relAccum=0,now=0;
+let relAccum=0,tonicAccum=0,now=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
 // e stato con isteresi (trendState: full | down | up | hold) per evitare sfarfallii nei testi
 let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
+// Neuroni recettivi: media lenta del conteggio (activeAvg) e valore mostrato campionato ogni secondo (activeShown)
+let activeAvg=0,activeShown=0;
 // Effetti visivi (non influenzano il modello)
 let pops=[],pulses=[],apPulses=[],motes=[],apAccum=0;
 
@@ -122,10 +146,24 @@ function spawn(x,y){
 
 // Debito percepito: la caffeina ne maschera una parte (quella reale resta)
 function perceivedDebt(){return sleepDebt*(caffeineActive?CAFF_DEBT_MASK:1);}
-// Recettori D2 effettivi per neurone: seguono la sensibilità (tolleranza da scrolling)
-function effectiveD2(){return Math.max(2,Math.round(MODES[mode].d2Count*d2Sens));}
-// Soglia di attivazione: sale con il debito percepito; la caffeina la abbassa
-function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineActive?CAFF_THRESH:1);}
+// Età: lo stesso fattore scala i recettori D2 di partenza e il rilascio (con gli anni calano sia i D2
+// sia il numero di neuroni dopaminergici e la capacità di sintesi)
+function ageFactor(){return age<AGE_REF?1+0.01*(AGE_REF-age):Math.max(0.5,1-0.06*(age-AGE_REF)/10);}
+function baseD2(){return Math.max(2,Math.round(MODES[mode].d2Count*ageFactor()));}
+function effectiveD2(){return Math.max(2,Math.round(MODES[mode].d2Count*ageFactor()*d2Sens));}
+// Sostanze: composizione degli effetti (attivi e successivi) sui parametri del modello
+const sAct=k=>subst[k].t>0,sAft=k=>subst[k].t<=0&&subst[k].after>0;
+function substBoost(){let b=0;for(const k in subst)if(sAct(k))b+=SUBST[k].boost;return b;}
+function releaseMult(){return (caffeineActive?CAFF_RELEASE:1)*(sAct('nic')?SUBST.nic.release:sAft('nic')?SUBST.nic.afterRelease:1)*(sAct('can')?SUBST.can.release:1)*(sAct('alc')?SUBST.alc.release:1);}
+function datBlock(){return Math.max(mphActive?MPH_BLOCK:0,sAct('coc')?SUBST.coc.datBlock:0);}
+function datSpeedMult(){let m=1;if(mphActive)m*=MPH_SLOW;if(sAct('coc'))m*=SUBST.coc.datSlow;if(mphRebound>0)m*=MPH_REBOUND_SPEED;if(sAft('coc'))m*=SUBST.coc.afterDat;return m;}
+function threshMult(){return (sAft('alc')?SUBST.alc.afterThresh:1)*(sAft('coc')?SUBST.coc.afterThresh:1);}
+function sleepMult(){let m=mphActive?MPH_SLEEP_MULT:1;if(sAct('nic'))m*=SUBST.nic.sleep;if(sAct('alc')||sAft('alc'))m*=SUBST.alc.sleep;if(sAct('coc'))m*=SUBST.coc.sleep;return m;}
+function synthMult(){return sAft('can')?SUBST.can.afterSynth:1;}
+// Quota di rilascio ancora possibile con la riserva che scende (1 sopra il 20%, poi lineare fino a 0)
+function supply(){return Math.min(1,(vesCount/MAX_VES)/DEPLETE_FROM);}
+// Soglia di attivazione: sale con il debito percepito e con i postumi; la caffeina la abbassa
+function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineActive?CAFF_THRESH:1)*threshMult();}
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
@@ -139,18 +177,19 @@ function update(dt){
   if(caffEndTimer>0)caffEndTimer-=dt;
   if(mphTimer>0){mphTimer-=dt;if(mphTimer<=0){mphTimer=0;mphActive=false;mphRebound=MPH_REBOUND_DUR;}}
   if(mphRebound>0)mphRebound-=dt;
+  for(const k in subst){const s=subst[k];if(s.t>0){s.t-=dt;if(s.t<=0){s.t=0;s.after=SUBST[k].after;}}else if(s.after>0)s.after-=dt;}
   if(exerciseTimer>0){
     exerciseTimer-=dt;
     vesCount=Math.min(MAX_VES,vesCount+(0.5-sleepDebt*0.3)*sdt);   // l'esercizio accelera la sintesi, meno se c'è debito di sonno
     if(exerciseTimer<=0){exerciseTimer=0;exerciseActive=false;}
   }
   // Debito di sonno: cresce con il tempo di veglia, indipendentemente dallo stimolo (più in fretta sotto stimolante)
-  sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*(mphActive?MPH_SLEEP_MULT:1)*sdt);
+  sleepDebt=Math.min(1,sleepDebt+SLEEP_DEBT_RATE*sleepMult()*sdt);
   if(sleepToastTimer>0)sleepToastTimer-=dt;
 
   // Rilascio: l'esercizio aggiunge un boost dolce (ridotto dal debito di sonno), la caffeina lo alza un po'
   const exerciseBoost=exerciseActive?15-sleepDebt*10:0;
-  const rate=(stimulus*30+exerciseBoost)*cfg.snap25Eff*(caffeineActive?CAFF_RELEASE:1);
+  const rate=(stimulus*30+exerciseBoost+substBoost())*cfg.snap25Eff*releaseMult()*supply()*ageFactor();
   relAccum+=rate*sdt;
   while(relAccum>=1){
     relAccum-=1;
@@ -160,20 +199,28 @@ function update(dt){
       spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;
     }
   }
-  if(vesCount<MAX_VES){vesCount+=0.2*sdt;if(vesCount>MAX_VES)vesCount=MAX_VES;}
+  // Rilascio tonico di fondo (segue i moltiplicatori delle sostanze, non lo stimolo)
+  tonicAccum+=TONIC_RATE*releaseMult()*supply()*ageFactor()*sdt;
+  while(tonicAccum>=1){tonicAccum-=1;if(vesCount>1){vesCount=Math.max(0,vesCount-TONIC_COST);spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;}}
+  if(vesCount<MAX_VES){vesCount+=0.2*synthMult()*sdt;if(vesCount>MAX_VES)vesCount=MAX_VES;}
 
-  // Scrolling compulsivo: raffiche a basso costo e desensibilizzazione dei D2; senza scrolling i D2 recuperano piano
+  // Ricompense facili: raffiche a basso costo scatenate da "segnali"
   if(scrollActive){
     scrollAccum+=SCROLL_BURST_RATE*sdt;
-    while(scrollAccum>=1){scrollAccum-=1;burstLeft+=SCROLL_BURST_N;for(let k=0;k<3;k++)if(apPulses.length<40)apPulses.push({x:-10-k*14,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
-    d2Sens=Math.max(D2_SENS_MIN,d2Sens-SCROLL_DESENS*sdt);
-  }else if(d2Sens<1)d2Sens=Math.min(1,d2Sens+SCROLL_RECOVER*sdt);
+    while(scrollAccum>=1){scrollAccum-=1;burstLeft+=Math.round(SCROLL_BURST_N*supply());for(let k=0;k<3;k++)if(apPulses.length<40)apPulses.push({x:-10-k*14,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
+  }
+  // Assuefazione: i D2 si desensibilizzano finché la stimolazione dura (ricompense facili o sostanze attive),
+  // poi tornano lentamente. Le sostanze usano secondi reali, così il costo di una dose non dipende dalla scala del tempo
+  let desens=scrollActive?SCROLL_DESENS*sdt:0;
+  for(const k in subst)if(subst[k].t>0)desens+=SUBST[k].des*dt;
+  if(desens>0)d2Sens=Math.max(D2_SENS_MIN,d2Sens-desens);
+  else if(d2Sens<1)d2Sens=Math.min(1,d2Sens+SCROLL_RECOVER*sdt);
   if(burstLeft>0){let n=Math.min(burstLeft,Math.ceil(2*speedMul));burstLeft-=n;
     while(n-->0&&vesCount>1){vesCount=Math.max(0,vesCount-SCROLL_COST);spawn(CLEFT.x+2,15+Math.random()*(H-30));stats.total++;rateRelCount++;}}
   const eff=effectiveD2();if(eff!==effD2){effD2=eff;rebuildReceptors();}   // i recettori spariscono/ricompaiono con la tolleranza
 
   // Potenziali d'azione lungo l'assone (solo visivi): la frequenza segue lo stimolo
-  apAccum+=(stimulus*10+(exerciseActive?2:0))*dt;
+  apAccum+=(1.2+stimulus*10+(exerciseActive?2:0))*dt;   // 1,2/s = attività tonica
   while(apAccum>=1){apAccum-=1;if(apPulses.length<40)apPulses.push({x:-10,y:TERM.cy+(Math.random()-.5)*TERM.axonR*.6});}
   const apEnd=TERM.xJ+PRE.w*.18;
   for(const a of apPulses)a.x+=PRE.w*0.9*dt;
@@ -205,7 +252,7 @@ function update(dt){
       const dat1Zone=cleftLeft+3+cfg.dat1Speed*4;
       if(p.x<dat1Zone&&p.age>0.15){
         const baseProb=0.7+cfg.dat1Speed*0.12;   // ADHD ≈0.94, Neurotipico ≈0.78
-        const reuptakeProb=mphActive?baseProb*(1-MPH_BLOCK):baseProb;   // il metilfenidato blocca i DAT1
+        const reuptakeProb=baseProb*(1-datBlock());   // metilfenidato e cocaina bloccano i DAT1
         if(Math.random()<reuptakeProb){
           p.state='reuptake';p.target=reuptakeTarget(p.y);rateReabCount++;
         }else{
@@ -270,8 +317,10 @@ function update(dt){
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
   lastVes=vesCount;
+  let nAct=0;for(const n of postNeurons)if(n.active)nAct++;
+  activeAvg+=(nAct-activeAvg)*Math.min(1,dt*0.6);
   trendTimer+=dt;
-  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();}
+  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=Math.round(activeAvg);}
 
   // Trasportatori DAT1: agganciano le particelle e le riportano dentro (il metilfenidato li rallenta e li fa fallire)
   for(const d of dat1s){
@@ -280,16 +329,16 @@ function update(dt){
       if(best){d.target=best;d.state='reaching';d.timer=0;}
     }
     if(d.state==='reaching'){
-      const spd=cfg.dat1Speed*(mphActive?MPH_SLOW:1)*(mphRebound>0?MPH_REBOUND_SPEED:1);
+      const spd=cfg.dat1Speed*datSpeedMult();
       d.timer+=sdt*spd;d.arm=Math.min(1,d.timer*2);
       if(d.target&&d.target.state!=='free'){d.state='idle';d.arm=0;d.target=null;continue;}
       if(d.arm>=1&&d.target){
-        const mphFail=mphActive&&Math.random()<MPH_BLOCK;
+        const blk=datBlock(),mphFail=blk>0&&Math.random()<blk;
         if(mphFail){d.state='idle';d.arm=0;d.target=null;}
         else{d.target.state='reuptake';d.target.target=reuptakeTarget(d.y);d.state='pulling';d.timer=0;rateReabCount++;}
       }
     }
-    if(d.state==='pulling'){d.timer+=sdt*cfg.dat1Speed*(mphRebound>0?MPH_REBOUND_SPEED:1);d.arm=Math.max(0,1-d.timer*2.5);if(d.arm<=0){d.state='idle';d.target=null;d.timer=0;}}
+    if(d.state==='pulling'){d.timer+=sdt*cfg.dat1Speed*datSpeedMult();d.arm=Math.max(0,1-d.timer*2.5);if(d.arm<=0){d.state='idle';d.target=null;d.timer=0;}}
   }
 
   // COMT: probabilità di distruzione indipendente dal frame rate (equivale a comtRate × scala a 60 fps)
@@ -334,16 +383,23 @@ function classifyTrend(){
 
 // ───────────────────────── Comandi ─────────────────────────
 function setMode(m){if(m===mode||!MODES[m])return;mode=m;effD2=null;rebuildReceptors();rebuildDat1();}
+function setStimulus(v){stimulus=Math.max(0,Math.min(1,v));}
+function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
-  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};relAccum=0;sleepToastTimer=3;
+  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
+  particles=[];stats={recycled:0,maob:0,comt:0,total:0,binds:0};relAccum=0;tonicAccum=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;burstLeft=0;mphRebound=0;caffEndTimer=0;
+  caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
+  for(const k in subst){subst[k].t=0;subst[k].after=0;}
   d2Sens=Math.min(1,d2Sens+SLEEP_TOL_RECOVER);effD2=null;
   rebuildAll();
 }
 function startCaffeine(){if(caffeineActive)return;caffeineTimer=CAFF_DUR;caffeineActive=true;caffEndTimer=0;}
 function startMph(){if(mphActive)return;mphTimer=MPH_DUR;mphActive=true;mphRebound=0;}
 function toggleScroll(){scrollActive=!scrollActive;if(!scrollActive)burstLeft=0;}
+// Una dose di sostanza: parte l'effetto; i D2 si consumano gradualmente mentre dura (vedi SUBST[k].des in update)
+function startSubst(k){const s=subst[k];if(!s||s.t>0)return;s.t=SUBST[k].dur;s.after=0;}
+function setAge(a){age=Math.max(AGE_MIN,Math.min(AGE_MAX,Math.round(a)));effD2=null;}
 function startExercise(){if(exerciseActive)return;exerciseTimer=EXER_DUR;exerciseActive=true;}
 function togglePause(){paused=!paused;}

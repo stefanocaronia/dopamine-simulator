@@ -51,6 +51,7 @@ function applyI18n(){
   const btn=$('lang-btn');
   if(btn){btn.querySelector('use').setAttribute('href','#flag-'+lang);btn.querySelector('.lang-code').textContent=lang.toUpperCase();btn.setAttribute('aria-label',m.name);}
   document.querySelectorAll('#lang-menu li').forEach(li=>{const on=li.dataset.lang===lang;li.classList.toggle('is-on',on);li.setAttribute('aria-selected',String(on));});
+  if(typeof renderDocs==='function')renderDocs();   // pagine di testo (ui.js)
 }
 function setLang(l){
   if(!I18N[l])return;lang=l;

@@ -113,6 +113,8 @@ function drawTerminal(){
     for(let j=0;j<=6;j++){const yy=M.y+M.h*j/6,xx=x+Math.sin(j*1.7+i+t*.6)*4;j===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);}
     ctx.stroke();}
   ctx.restore();
+  // Esercizio: il terminale si tinge leggermente di verde (sintesi accelerata)
+  if(exerciseActive){terminalPath(t);ctx.fillStyle='rgba(60,179,113,'+(0.06+0.04*Math.sin(t*3))+')';ctx.fill();}
   // Vescicole
   const N=vesicles.length,filled=Math.floor(vesCount/MAX_VES*N+1e-6);
   const sv=sprite(C.dopa,2.4,7);
@@ -121,11 +123,22 @@ function drawTerminal(){
       ctx.beginPath();ctx.arc(v.x,v.y,3.6,0,6.283);ctx.strokeStyle='rgba(140,255,200,.35)';ctx.lineWidth=1;ctx.stroke();}
     else{ctx.beginPath();ctx.arc(v.x,v.y,2.4,0,6.283);ctx.strokeStyle='rgba(70,100,135,.35)';ctx.lineWidth=1;ctx.stroke();}
   }
-  // Etichette delle zone: sopra le vescicole, così restano leggibili anche su schermi piccoli
-  label(T('cv.vmat2'),V.x+V.w/2,V.y+V.h/2-7,'800 11px','#7ab8ff',C.vmat,V.w+14);
-  label(T('cv.vmat2sub'),V.x+V.w/2,V.y+V.h/2+8,'600 9.5px','rgba(122,184,255,.8)',null,V.w+14);
-  label(T('cv.maob'),M.x+M.w/2,M.y+M.h/2-7,'800 11px','#ff6b85',C.dead,M.w+14);
-  label(T('cv.maobsub'),M.x+M.w/2,M.y+M.h/2+8,'600 9.5px','rgba(255,107,133,.85)',null,M.w+14);
+  // Etichette delle zone: sopra le vescicole, così restano leggibili anche su schermi piccoli.
+  // Con abbastanza spazio, icona grande (♻ / ✕) sopra il nome e il verbo sotto.
+  const verb=s=>s.replace(/^\S+\s+/,'');
+  if(V.h>=64){
+    label('♻',V.x+V.w/2,V.y+V.h/2-16,'800 20px','#7ab8ff',C.vmat);
+    label(T('cv.vmat2'),V.x+V.w/2,V.y+V.h/2+4,'800 11px','#7ab8ff',C.vmat,V.w+14);
+    label(verb(T('cv.vmat2sub')),V.x+V.w/2,V.y+V.h/2+17,'600 9.5px','rgba(122,184,255,.8)',null,V.w+14);
+    label('✕',M.x+M.w/2,M.y+M.h/2-16,'800 20px','#ff6b85',C.dead);
+    label(T('cv.maob'),M.x+M.w/2,M.y+M.h/2+4,'800 11px','#ff6b85',C.dead,M.w+14);
+    label(verb(T('cv.maobsub')),M.x+M.w/2,M.y+M.h/2+17,'600 9.5px','rgba(255,107,133,.85)',null,M.w+14);
+  }else{
+    label(T('cv.vmat2'),V.x+V.w/2,V.y+V.h/2-7,'800 11px','#7ab8ff',C.vmat,V.w+14);
+    label(T('cv.vmat2sub'),V.x+V.w/2,V.y+V.h/2+8,'600 9.5px','rgba(122,184,255,.8)',null,V.w+14);
+    label(T('cv.maob'),M.x+M.w/2,M.y+M.h/2-7,'800 11px','#ff6b85',C.dead,M.w+14);
+    label(T('cv.maobsub'),M.x+M.w/2,M.y+M.h/2+8,'600 9.5px','rgba(255,107,133,.85)',null,M.w+14);
+  }
 }
 
 function drawPostCells(){
@@ -144,22 +157,27 @@ function drawPostCells(){
     ctx.lineJoin='round';
     ctx.strokeStyle=n.active?`rgba(0,229,255,${.45+n.glow*.4})`:'#26415f';ctx.lineWidth=5;ctx.stroke();
     ctx.strokeStyle='#0b1522';ctx.lineWidth=2;ctx.stroke();
-    // Indicatore ad anello: la tacca in basso è la soglia di attivazione
-    const lw=R<22?4:6;
-    const pct=Math.min(1,n.signal/(thresh*2));
+    // Indicatore ad anello su scala fissa (0 … 2,5 × soglia base): la tacca è la soglia attuale,
+    // quindi si vede spostarsi con debito di sonno (sale), caffeina (scende) e postumi (sale)
+    const lw=R<22?4:6,scale=ACT_THRESHOLD*2.5;
+    const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
     if(pct>0.003){ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=n.active?C.active:'#3d6a8a';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
-    ctx.beginPath();ctx.moveTo(cx,ncy+R-lw);ctx.lineTo(cx,ncy+R+lw);ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;ctx.stroke();
+    const ca=Math.cos(ta),sa=Math.sin(ta);
+    ctx.beginPath();ctx.moveTo(cx+ca*(R-lw-1),ncy+sa*(R-lw-1));ctx.lineTo(cx+ca*(R+lw+1),ncy+sa*(R+lw+1));ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.stroke();
     if(R>=22){
       if(n.active)label(T('cv.receptive'),cx,ncy,'800 10px',C.active,C.active,2*R-12);else label(T('cv.silent'),cx,ncy,'600 10px','#4f6a8c',null,2*R-12);
-      label(T('cv.threshold'),cx,ncy+R+14,'600 8.5px','rgba(255,255,255,.3)');
+      ctx.save();ctx.font='600 8.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
+      ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillText(T('cv.threshold'),cx+ca*(R+lw+7),ncy+sa*(R+lw+7)+(Math.abs(ca)<=0.25?(sa>0?6:-6):0));ctx.restore();
     }
   }
-  // Recettori D2: tasche aperte verso la fessura, incastonate nella membrana
-  const sOcc=sprite(C.dopa,3,12);
+  // Recettori D2: tasche aperte verso la fessura, incastonate nella membrana.
+  // Con la caffeina hanno un alone caldo (rispondono di più); con l'assuefazione sono semplicemente di meno.
+  const sOcc=sprite(C.dopa,3,12),sCaff=caffeineActive?sprite(C.caff,2,11):null;
   for(const r of receptors){
     ctx.save();ctx.translate(r.x,r.y);if(r.sc<1)ctx.scale(r.sc,r.sc);
     const flash=r.occupied?1:(r.cooldown>0?r.cooldown*8:0);
+    if(sCaff)blit(sCaff,2,0,.4);
     if(r.occupied)blit(sOcc,1,0,.9);
     ctx.beginPath();ctx.arc(2,0,5.5,-Math.PI/2,Math.PI/2);
     ctx.moveTo(2,-5.5);ctx.lineTo(-2.5,-5.5);ctx.moveTo(2,5.5);ctx.lineTo(-2.5,5.5);
@@ -171,13 +189,17 @@ function drawPostCells(){
 }
 
 function drawDAT1(){
-  const t=now,sAct=sprite(C.dat,4,14);
+  const t=now,sActive=sprite(C.dat,4,14);
+  // Trasportatori bloccati (metilfenidato o cocaina): spenti e con una sbarra del colore della sostanza
+  const blk=datBlock(),blkColor=subst.coc.t>0?C.coc:C.mph,sBlk=blk>0?sprite(blkColor,3,13):null;
   for(const d of dat1s){ctx.save();
     const act=d.state!=='idle';
-    if(act)blit(sAct,d.x,d.y,.7);
+    if(sBlk)blit(sBlk,d.x,d.y,.35);
+    if(act)blit(sActive,d.x,d.y,.7);
     roundRect(d.x-7,d.y-9,13,18,4);ctx.fillStyle=act?'#3a1d6e':'#241447';ctx.fill();
     ctx.strokeStyle=act?'#c98cff':C.dat;ctx.lineWidth=1.5;ctx.stroke();
     ctx.beginPath();ctx.moveTo(d.x-1,d.y-5);ctx.lineTo(d.x-1,d.y+5);ctx.strokeStyle=act?'#e9d5ff':'#7a4fc0';ctx.lineWidth=2;ctx.stroke();
+    if(blk>0){ctx.beginPath();ctx.moveTo(d.x-9,d.y+10);ctx.lineTo(d.x+8,d.y-10);ctx.strokeStyle=blkColor;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
     if(d.arm>0&&d.target){const dx=d.target.x-d.x,dy=d.target.y-d.y,dist=Math.max(1,Math.hypot(dx,dy));
       const armLen=d.arm*Math.min(CLEFT.w+40,dist),tipX=d.x+dx/dist*armLen,tipY=d.y+dy/dist*armLen;
       ctx.setLineDash([5,4]);ctx.lineDashOffset=d.state==='pulling'?t*50:-t*50;
@@ -249,7 +271,7 @@ function drawLabels(){
   ctx.font='700 10px "Segoe UI",system-ui,sans-serif';
   ctx.textAlign='left';ctx.fillStyle='rgba(190,120,255,.85)';ctx.fillText('DAT1',PRE.w+12,16);
   ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);
-  ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText('D2',CLEFT.x+CLEFT.w-8,16);
+  ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText(T('cv.d2',{n:effectiveD2()}),CLEFT.x+CLEFT.w-8,16);
   ctx.textAlign='left';ctx.font='600 9.5px "Segoe UI",system-ui,sans-serif';ctx.fillStyle='rgba(130,170,235,.7)';ctx.fillText(T('cv.axon'),6,TERM.cy-TERM.axonR-6);
   drawRates();
 }
