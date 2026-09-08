@@ -157,23 +157,29 @@ function drawPostCells(){
     ctx.lineJoin='round';
     ctx.strokeStyle=n.active?`rgba(0,229,255,${.45+n.glow*.4})`:'#26415f';ctx.lineWidth=5;ctx.stroke();
     ctx.strokeStyle='#0b1522';ctx.lineWidth=2;ctx.stroke();
-    // Indicatore ad anello su scala fissa (0 … 2,5 × soglia base): la tacca è la soglia attuale,
-    // quindi si vede spostarsi con debito di sonno (sale), caffeina (scende) e postumi (sale)
-    const lw=R<22?4:6,scale=ACT_THRESHOLD*2.5;
+    // Indicatore a ciambella su scala fissa (0 … 2,5 × soglia base). L'arco sale con il segnale; la tacca è la soglia
+    // attuale e si sposta con debito di sonno (sale), caffeina (scende) e postumi (sale). Quando l'arco raggiunge la
+    // tacca il neurone diventa ricettivo: lampo giallo nell'istante del superamento, poi ciano finché resta sopra
+    const lw=Math.max(7,Math.min(14,R*0.34)),half=lw/2,scale=ACT_THRESHOLD*2.5;
     const pct=Math.min(1,n.signal/scale),ta=-Math.PI/2+6.283*Math.min(0.98,thresh/scale);
     ctx.beginPath();ctx.arc(cx,ncy,R,0,6.283);ctx.strokeStyle='#15243a';ctx.lineWidth=lw;ctx.stroke();
-    if(pct>0.003){ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=n.active?C.active:'#3d6a8a';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();ctx.lineCap='butt';}
-    // Tacca della soglia: bordo scuro sotto e bianco con alone sopra, così si stacca sia dall'anello vuoto sia dal riempimento
-    const ca=Math.cos(ta),sa=Math.sin(ta),t0=R-lw-3,t1=R+lw+3;
+    if(pct>0.003){
+      const col=n.active?mixHex(C.active,'#ffe27a',n.flash):'#3d6a8a';
+      ctx.save();if(n.active){ctx.shadowColor=col;ctx.shadowBlur=8+18*n.flash;}
+      ctx.beginPath();ctx.arc(cx,ncy,R,-Math.PI/2,-Math.PI/2+6.283*pct);ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();ctx.restore();
+    }
+    // Tacca della soglia: attraversa tutta la ciambella, bordo scuro sotto e bianco con alone sopra
+    const ca=Math.cos(ta),sa=Math.sin(ta),t0=R-half-3,t1=R+half+3;
     ctx.save();ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(cx+ca*t0,ncy+sa*t0);ctx.lineTo(cx+ca*t1,ncy+sa*t1);ctx.strokeStyle='rgba(5,9,16,.9)';ctx.lineWidth=5.5;ctx.stroke();
     ctx.shadowColor='rgba(255,255,255,.85)';ctx.shadowBlur=6;ctx.strokeStyle='#ffffff';ctx.lineWidth=2.5;ctx.stroke();
     ctx.restore();
     if(R>=22){
-      if(n.active)label(T('cv.receptive'),cx,ncy,'800 10px',C.active,C.active,2*R-12);else label(T('cv.silent'),cx,ncy,'600 10px','#4f6a8c',null,2*R-12);
+      const inner=2*(R-half)-4;
+      if(n.active)label(T('cv.receptive'),cx,ncy,'800 9px',C.active,C.active,inner);else label(T('cv.silent'),cx,ncy,'600 9.5px','#4f6a8c',null,inner);
       ctx.save();ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign=ca>0.25?'left':ca<-0.25?'right':'center';
       ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=4;ctx.fillStyle='rgba(255,255,255,.88)';
-      ctx.fillText(T('cv.threshold'),cx+ca*(R+lw+9),ncy+sa*(R+lw+9)+(Math.abs(ca)<=0.25?(sa>0?7:-7):0));ctx.restore();
+      ctx.fillText(T('cv.threshold'),cx+ca*(R+half+9),ncy+sa*(R+half+9)+(Math.abs(ca)<=0.25?(sa>0?7:-7):0));ctx.restore();
     }
   }
   // Recettori D2: tasche aperte verso la fessura, incastonate nella membrana.

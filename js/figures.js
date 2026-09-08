@@ -64,8 +64,8 @@ FIG.threshold=function(){
   const ring=(x,pct,thr,act,label,sub)=>{
     const R=40,a0=-Math.PI/2,a1=a0+Math.PI*2*pct,ta=a0+Math.PI*2*thr;
     const arc='M'+(x+R*Math.cos(a0))+' '+(86+R*Math.sin(a0))+'A'+R+' '+R+' 0 '+(pct>.5?1:0)+' 1 '+(x+R*Math.cos(a1))+' '+(86+R*Math.sin(a1));
-    let s='<circle cx="'+x+'" cy="86" r="'+R+'" fill="none" stroke="#15243a" stroke-width="7"/>';
-    if(pct>0)s+='<path d="'+arc+'" fill="none" stroke="'+(act?C.active:'#3d6a8a')+'" stroke-width="7" stroke-linecap="round"/>';
+    let s='<circle cx="'+x+'" cy="86" r="'+R+'" fill="none" stroke="#15243a" stroke-width="12"/>';
+    if(pct>0)s+='<path d="'+arc+'" fill="none" stroke="'+(act?C.active:'#3d6a8a')+'" stroke-width="12"/>';
     const tk='M'+(x+(R-10)*Math.cos(ta))+' '+(86+(R-10)*Math.sin(ta))+'L'+(x+(R+10)*Math.cos(ta))+' '+(86+(R+10)*Math.sin(ta));
     s+='<path d="'+tk+'" stroke="rgba(5,9,16,.9)" stroke-width="6" stroke-linecap="round"/><path d="'+tk+'" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>';
     s+=_txt(x,90,act?T('cv.receptive'):T('cv.silent'),{c:act?C.active:'#4f6a8c',s:act?10:10.5,w:act?800:600});

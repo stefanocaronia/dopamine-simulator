@@ -103,7 +103,7 @@ function rebuildAll(){
   }
   postNeurons=[];
   const nC=3,gap=12,top=12,bottom=H-26,nH=(bottom-top-gap*(nC-1))/nC;
-  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false});
+  for(let i=0;i<nC;i++)postNeurons.push({x:POST.x,y:top+i*(nH+gap),w:POST.w,h:nH,signal:0,glow:0,active:false,flash:0});   // flash: lampo al superamento della soglia (solo grafica)
   rebuildReceptors();rebuildDat1();
   comts=[];for(let i=0;i<3;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28});
   pops=[];pulses=[];apPulses=[];
@@ -310,7 +310,9 @@ function update(dt){
   for(const n of postNeurons){
     // Il debito di sonno alza la soglia e accorcia l'emivita del segnale
     n.signal*=Math.pow(0.5,sdt/halfLifeNow());
+    const was=n.active;
     n.active=n.signal>=thresholdNow();
+    n.flash=(n.active&&!was)?1:Math.max(0,n.flash-dt*2.5);   // lampo di ~0,4 s reali quando l'arco tocca la soglia
     n.glow=n.active?Math.min(1,n.glow+6*sdt):Math.max(0,n.glow-4*sdt);
   }
   rateWindow+=dt;
