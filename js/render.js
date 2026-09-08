@@ -157,13 +157,14 @@ function drawPostCells(){
     ctx.closePath();
     // Luce della cellula: alone, riempimento e bordo seguono l'inviluppo n.glow (impulso, mantenimento, dissolvenza)
     const lit=n.glow;
-    if(lit>.01){ctx.save();ctx.shadowColor=C.active;ctx.shadowBlur=34*lit;ctx.fillStyle=`rgba(0,229,255,${.07*lit})`;ctx.fill();ctx.restore();}
     const g=ctx.createLinearGradient(x0,0,x1,0);
     g.addColorStop(0,mixHex('#0d1727','#0e2e40',lit));g.addColorStop(1,mixHex('#0a111d','#0a1e2e',lit));
     ctx.fillStyle=g;ctx.fill();
+    if(lit>.01){ctx.fillStyle=`rgba(0,229,255,${.07*lit})`;ctx.fill();}
     ctx.lineJoin='round';
     ctx.strokeStyle='#26415f';ctx.lineWidth=5;ctx.stroke();
-    if(lit>.01){ctx.strokeStyle=`rgba(0,229,255,${.9*lit})`;ctx.lineWidth=5;ctx.stroke();}
+    // Scarica: bordo azzurro con alone (l'ombra va sul tratto, non sul riempimento quasi trasparente, altrimenti non si vede)
+    if(lit>.01){ctx.save();ctx.shadowColor=C.active;ctx.shadowBlur=(14+22*lit)*lit;ctx.strokeStyle=`rgba(0,229,255,${.9*lit})`;ctx.lineWidth=5;ctx.stroke();ctx.restore();}
     ctx.strokeStyle='#0b1522';ctx.lineWidth=2;ctx.stroke();
     // Indicatore a ciambella su scala fissa (0 … 2,5 × soglia base). L'arco sale con il segnale; la tacca è la soglia
     // attuale e si sposta con debito di sonno (sale), caffeina (scende) e postumi (sale). Quando l'arco raggiunge la
