@@ -30,7 +30,7 @@ I18N.es={
   'cv.terminal':'NEURONA DOPAMINÉRGICA','cv.cleft':'HENDIDURA SINÁPTICA','cv.post':'NEURONAS RECEPTORAS',
   'cv.axon':'axón','cv.snap':'SNAP25 · zona activa','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ recicla','cv.maob':'MAO','cv.maobsub':'✕ degrada',
   'cv.receptive':'RECEPTIVA','cv.silent':'silente','cv.threshold':'umbral','cv.d2':'D2 · {n}',
-  'cv.cortex':'corteza',
+  'cv.cortex':'axones de la corteza',
   'cv.rel':' liberación','cv.reab':' recaptación','cv.dead':' destruidas',
 
   't.mode.adhd.t':'🧠 Cerebro con TDAH',
@@ -149,7 +149,7 @@ I18N.es={
   'tip.cleft.b':'<p>El espacio (unos 20 nm) entre las dos neuronas. Aquí la <i class="c-dopa">dopamina</i> difunde en busca de un receptor <i class="c-d2">D2</i>, pero se arriesga a la recaptación (<i class="c-dat">DAT1</i>) o la degradación (<i class="c-comt">COMT</i>).</p><p>Moléculas libres ahora: <b>{free}</b>.</p>',
   'tip.post.t':'Neurona receptora',
   'tip.cortex.t':'Entrada desde la corteza',
-  'tip.cortex.b':'<p>Fibras que traen <b>glutamato</b> desde la corteza y el tálamo: la señal que le dice a la neurona receptora <b>qué</b> está pasando y qué acción es posible. Llegan impulsos de fondo (1 Hz) más otros que crecen con el <i class="c-dopa">estímulo</i>.</p><p>Cuando llega un impulso, la neurona <i class="c-fire">descarga</i> (luz cian) solo si la dopamina la ha vuelto <i class="c-act">receptiva</i>; si no, el impulso se apaga en la membrana (anillo gris). Misma entrada, respuesta distinta: ese es el trabajo de la dopamina.</p><p>Ahora: impulsos <b>{hz} Hz</b> por neurona · descargas <b>{fires}/s</b> · pasados <b>{passed}</b>, apagados <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>Son los <b>axones</b> de neuronas de la corteza (y del tálamo): hacen sinapsis en las <b>dendritas</b> de la neurona receptora, junto a los contactos de la dopamina. Aquí entran por la derecha por claridad.</p><p>Fibras que traen <b>glutamato</b> desde la corteza y el tálamo: la señal que le dice a la neurona receptora <b>qué</b> está pasando y qué acción es posible. Llegan impulsos de fondo (1 Hz) más otros que crecen con el <i class="c-dopa">estímulo</i>.</p><p>Cuando llega un impulso, la neurona <i class="c-fire">descarga</i> (luz cian) solo si la dopamina la ha vuelto <i class="c-act">receptiva</i>; si no, el impulso se apaga en la membrana (anillo gris). Misma entrada, respuesta distinta: ese es el trabajo de la dopamina.</p><p>Ahora: impulsos <b>{hz} Hz</b> por neurona · descargas <b>{fires}/s</b> · pasados <b>{passed}</b>, apagados <b>{lost}</b>.</p>',
   'tip.post.b':'<p>Una neurona posterior (en el estriado o en la corteza prefrontal, por ejemplo). Suma la señal de las uniones en sus receptores <i class="c-d2">D2</i>; pasado el <b>umbral</b> se vuelve <i class="c-act">receptiva</i> y el anillo se pone amarillo. No está "encendida": lo que la hace <i class="c-fire">descargar</i> (luz cian) es el impulso que llega desde la <b>corteza</b>, por la derecha, y pasa solo si la neurona es receptiva. Ahí es donde motivación y atención "se disparan".</p>',
   'tip.post.state':'<p>Estado: <b>{state}</b> · señal al <b>{sig}%</b> del umbral.</p>',
   'u.state.receptive':'RECEPTIVA','u.state.silent':'silente',

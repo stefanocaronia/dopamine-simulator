@@ -30,7 +30,7 @@ I18N.en={
   'cv.terminal':'DOPAMINE NEURON','cv.cleft':'SYNAPTIC CLEFT','cv.post':'RECEIVING NEURONS',
   'cv.axon':'axon','cv.snap':'SNAP25 · active zone','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ recycles','cv.maob':'MAO','cv.maobsub':'✕ degrades',
   'cv.receptive':'RECEPTIVE','cv.silent':'silent','cv.threshold':'threshold','cv.d2':'D2 · {n}',
-  'cv.cortex':'cortex',
+  'cv.cortex':'axons from the cortex',
   'cv.rel':' release','cv.reab':' reuptake','cv.dead':' destroyed',
 
   't.mode.adhd.t':'🧠 ADHD brain',
@@ -149,7 +149,7 @@ I18N.en={
   'tip.cleft.b':'<p>The gap (about 20 nm) between the two neurons. Here <i class="c-dopa">dopamine</i> diffuses in search of a <i class="c-d2">D2</i> receptor, at the risk of reuptake (<i class="c-dat">DAT1</i>) or degradation (<i class="c-comt">COMT</i>).</p><p>Free molecules now: <b>{free}</b>.</p>',
   'tip.post.t':'Receiving neuron',
   'tip.cortex.t':'Input from the cortex',
-  'tip.cortex.b':'<p>Fibres carrying <b>glutamate</b> from the cortex and the thalamus: the signal that tells the receiving neuron <b>what</b> is happening and which action is possible. Background impulses arrive (1 Hz) plus more as the <i class="c-dopa">stimulus</i> grows.</p><p>When an impulse arrives, the neuron <i class="c-fire">fires</i> (cyan light) only if dopamine has made it <i class="c-act">receptive</i>; otherwise the impulse dies on the membrane (grey ring). Same input, different outcome: that is dopamine\'s job.</p><p>Now: impulses <b>{hz} Hz</b> per neuron · firings <b>{fires}/s</b> · passed <b>{passed}</b>, lost <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>These are the <b>axons</b> of cortical (and thalamic) neurons: they make synapses on the <b>dendrites</b> of the receiving neuron, next to the dopamine contacts. Here they come in from the right for clarity.</p><p>Fibres carrying <b>glutamate</b> from the cortex and the thalamus: the signal that tells the receiving neuron <b>what</b> is happening and which action is possible. Background impulses arrive (1 Hz) plus more as the <i class="c-dopa">stimulus</i> grows.</p><p>When an impulse arrives, the neuron <i class="c-fire">fires</i> (cyan light) only if dopamine has made it <i class="c-act">receptive</i>; otherwise the impulse dies on the membrane (grey ring). Same input, different outcome: that is dopamine\'s job.</p><p>Now: impulses <b>{hz} Hz</b> per neuron · firings <b>{fires}/s</b> · passed <b>{passed}</b>, lost <b>{lost}</b>.</p>',
   'tip.post.b':'<p>A downstream neuron (in the striatum or the prefrontal cortex, for example). It adds up the signal from bindings on its <i class="c-d2">D2</i> receptors; past the <b>threshold</b> it becomes <i class="c-act">receptive</i> and the ring turns yellow. It is not "switched on": what makes it <i class="c-fire">fire</i> (cyan light) is the impulse arriving from the <b>cortex</b>, from the right, and it passes only if the neuron is receptive. This is where motivation and attention "click".</p>',
   'tip.post.state':'<p>State: <b>{state}</b> · signal at <b>{sig}%</b> of the threshold.</p>',
   'u.state.receptive':'RECEPTIVE','u.state.silent':'silent',

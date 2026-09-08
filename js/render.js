@@ -195,7 +195,8 @@ function drawPostCells(){
     // viaggiano verso sinistra e all'arrivo fanno scaricare il neurone se è ricettivo (anello azzurro), altrimenti muoiono (anello grigio)
     const fx0=W+4,fx1=x1-1;
     ctx.strokeStyle='rgba(255,226,122,.28)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(fx0,ncy);ctx.lineTo(fx1,ncy);ctx.stroke();
-    ctx.fillStyle='rgba(255,226,122,.45)';ctx.beginPath();ctx.arc(fx1,ncy,2.6,0,6.283);ctx.fill();
+    // Bottone sinaptico: la fibra è un assone corticale che fa sinapsi sul neurone ricevente
+    ctx.beginPath();ctx.arc(fx1+1,ncy,4.2,0,6.283);ctx.fillStyle='rgba(255,226,122,.55)';ctx.fill();ctx.strokeStyle='rgba(11,21,34,.9)';ctx.lineWidth=1.2;ctx.stroke();
     const sIn=sprite(C.ap,2.2,9);
     for(const u of n.inPulses){const px=fx0+(fx1-fx0)*u.s,fade=u.s>.85?Math.max(0,1-(u.s-.85)/.15):1;
       ctx.strokeStyle=`rgba(255,226,122,${.55*fade})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(px+16,ncy);ctx.lineTo(px,ncy);ctx.stroke();blit(sIn,px,ncy,fade);}

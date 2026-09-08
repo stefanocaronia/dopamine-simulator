@@ -30,7 +30,7 @@ I18N.pt={
   'cv.terminal':'NEURÔNIO DOPAMINÉRGICO','cv.cleft':'FENDA SINÁPTICA','cv.post':'NEURÔNIOS RECEPTORES',
   'cv.axon':'axônio','cv.snap':'SNAP25 · zona ativa','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ recicla','cv.maob':'MAO','cv.maobsub':'✕ degrada',
   'cv.receptive':'RECEPTIVO','cv.silent':'silencioso','cv.threshold':'limiar','cv.d2':'D2 · {n}',
-  'cv.cortex':'córtex',
+  'cv.cortex':'axônios do córtex',
   'cv.rel':' liberação','cv.reab':' recaptação','cv.dead':' destruídas',
 
   't.mode.adhd.t':'🧠 Cérebro TDAH',
@@ -149,7 +149,7 @@ I18N.pt={
   'tip.cleft.b':'<p>O espaço (cerca de 20 nm) entre os dois neurônios. Aqui a <i class="c-dopa">dopamina</i> difunde em busca de um receptor <i class="c-d2">D2</i>, mas corre o risco de recaptação (<i class="c-dat">DAT1</i>) ou degradação (<i class="c-comt">COMT</i>).</p><p>Moléculas livres agora: <b>{free}</b>.</p>',
   'tip.post.t':'Neurônio receptor',
   'tip.cortex.t':'Entrada do córtex',
-  'tip.cortex.b':'<p>Fibras que trazem <b>glutamato</b> do córtex e do tálamo: o sinal que diz ao neurônio receptor <b>o que</b> está acontecendo e qual ação é possível. Chegam impulsos de fundo (1 Hz) mais outros que crescem com o <i class="c-dopa">estímulo</i>.</p><p>Quando um impulso chega, o neurônio <i class="c-fire">dispara</i> (luz ciano) só se a dopamina o tornou <i class="c-act">receptivo</i>; senão o impulso se apaga na membrana (anel cinza). Mesma entrada, resposta diferente: esse é o trabalho da dopamina.</p><p>Agora: impulsos <b>{hz} Hz</b> por neurônio · disparos <b>{fires}/s</b> · passaram <b>{passed}</b>, apagados <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>São os <b>axônios</b> de neurônios do córtex (e do tálamo): fazem sinapse nos <b>dendritos</b> do neurônio receptor, ao lado dos contatos da dopamina. Aqui entram pela direita, por clareza.</p><p>Fibras que trazem <b>glutamato</b> do córtex e do tálamo: o sinal que diz ao neurônio receptor <b>o que</b> está acontecendo e qual ação é possível. Chegam impulsos de fundo (1 Hz) mais outros que crescem com o <i class="c-dopa">estímulo</i>.</p><p>Quando um impulso chega, o neurônio <i class="c-fire">dispara</i> (luz ciano) só se a dopamina o tornou <i class="c-act">receptivo</i>; senão o impulso se apaga na membrana (anel cinza). Mesma entrada, resposta diferente: esse é o trabalho da dopamina.</p><p>Agora: impulsos <b>{hz} Hz</b> por neurônio · disparos <b>{fires}/s</b> · passaram <b>{passed}</b>, apagados <b>{lost}</b>.</p>',
   'tip.post.b':'<p>Um neurônio a jusante (no estriado ou no córtex pré-frontal, por exemplo). Soma o sinal das ligações nos seus receptores <i class="c-d2">D2</i>; passado o <b>limiar</b>, torna-se <i class="c-act">receptivo</i> e o anel fica amarelo. Não está "ligado": o que o faz <i class="c-fire">disparar</i> (luz ciano) é o impulso que chega do <b>córtex</b>, pela direita, e que só passa se o neurônio for receptivo. É aí que motivação e atenção "engatam".</p>',
   'tip.post.state':'<p>Estado: <b>{state}</b> · sinal em <b>{sig}%</b> do limiar.</p>',
   'u.state.receptive':'RECEPTIVO','u.state.silent':'silencioso',

@@ -31,7 +31,7 @@ I18N.zh={
   'cv.terminal':'多巴胺能神经元','cv.cleft':'突触间隙','cv.post':'接收神经元',
   'cv.axon':'轴突','cv.snap':'SNAP25 · 活性区','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ 回收','cv.maob':'MAO','cv.maobsub':'✕ 破坏',
   'cv.receptive':'可响应','cv.silent':'静息','cv.threshold':'阈值','cv.d2':'D2 · {n}',
-  'cv.cortex':'皮层',
+  'cv.cortex':'来自皮层的轴突',
   'cv.rel':' 释放','cv.reab':' 再摄取','cv.dead':' 破坏',
 
   // 状态提示
@@ -152,7 +152,7 @@ I18N.zh={
   'tip.cleft.b':'<p>两个神经元之间的空隙（大约 20 纳米）。<i class="c-dopa">多巴胺</i>在这里扩散，寻找一个 <i class="c-d2">D2</i> 受体，但同时要冒被再摄取（<i class="c-dat">DAT1</i>）或被降解（<i class="c-comt">COMT</i>）的风险。</p><p>当前自由分子：<b>{free}</b>。</p>',
   'tip.post.t':'接收神经元',
   'tip.cortex.t':'来自皮层的输入',
-  'tip.cortex.b':'<p>从皮层和丘脑送来<b>谷氨酸</b>的纤维：这个信号告诉接收神经元<b>发生了什么</b>、可以做什么。背景脉冲（1 Hz）一直在到达，<i class="c-dopa">刺激</i>越高脉冲越多。</p><p>脉冲到达时，只有当多巴胺已经让神经元<i class="c-act">易感</i>，它才会<i class="c-fire">放电</i>（青色光）；否则脉冲在膜上熄灭（灰色圆环）。同样的输入，不同的结果：这就是多巴胺的作用。</p><p>当前：每个神经元脉冲 <b>{hz} Hz</b> · 放电 <b>{fires}/秒</b> · 通过 <b>{passed}</b>，熄灭 <b>{lost}</b>。</p>',
+  'tip.cortex.b':'<p>这些是皮层（和丘脑）神经元的<b>轴突</b>：它们在接收神经元的<b>树突</b>上形成突触，紧挨着多巴胺的接触点。这里为了清楚起见让它们从右侧进入。</p><p>从皮层和丘脑送来<b>谷氨酸</b>的纤维：这个信号告诉接收神经元<b>发生了什么</b>、可以做什么。背景脉冲（1 Hz）一直在到达，<i class="c-dopa">刺激</i>越高脉冲越多。</p><p>脉冲到达时，只有当多巴胺已经让神经元<i class="c-act">易感</i>，它才会<i class="c-fire">放电</i>（青色光）；否则脉冲在膜上熄灭（灰色圆环）。同样的输入，不同的结果：这就是多巴胺的作用。</p><p>当前：每个神经元脉冲 <b>{hz} Hz</b> · 放电 <b>{fires}/秒</b> · 通过 <b>{passed}</b>，熄灭 <b>{lost}</b>。</p>',
   'tip.post.b':'<p>下游神经元（比如在纹状体或前额叶皮层）。它把 <i class="c-d2">D2</i> 受体上的结合信号加总；越过<b>阈值</b>就变得<i class="c-act">易感</i>，圆环变黄。这不等于"打开"：让它<i class="c-fire">放电</i>（青色光）的是从右侧、来自<b>皮层</b>的脉冲，而且只有神经元易感时脉冲才通过。动机和注意力就是在这里"触发"的。</p>',
   'tip.post.state':'<p>状态：<b>{state}</b> · 信号达到阈值的 <b>{sig}%</b>。</p>',
   'u.state.receptive':'可响应','u.state.silent':'静息',

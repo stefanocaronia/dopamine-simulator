@@ -35,7 +35,7 @@ I18N.it={
   'cv.terminal':'NEURONE DOPAMINERGICO','cv.cleft':'FESSURA SINAPTICA','cv.post':'NEURONI RICEVENTI',
   'cv.axon':'assone','cv.snap':'SNAP25 · zona attiva','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ ricicla','cv.maob':'MAO','cv.maobsub':'✕ distrugge',
   'cv.receptive':'RICETTIVO','cv.silent':'silente','cv.threshold':'soglia','cv.d2':'D2 · {n}',
-  'cv.cortex':'corteccia',
+  'cv.cortex':'assoni dalla corteccia',
   'cv.rel':' rilascio','cv.reab':' ricaptazione','cv.dead':' distrutte',
 
   // Toast di stato
@@ -156,7 +156,7 @@ I18N.it={
   'tip.cleft.b':'<p>Lo spazio (circa 20 nm) tra i due neuroni. Qui la <i class="c-dopa">dopamina</i> diffonde in cerca di un recettore <i class="c-d2">D2</i>, ma rischia la ricaptazione (<i class="c-dat">DAT1</i>) o la degradazione (<i class="c-comt">COMT</i>).</p><p>Molecole libere adesso: <b>{free}</b>.</p>',
   'tip.post.t':'Neurone ricevente',
   'tip.cortex.t':'Ingresso dalla corteccia',
-  'tip.cortex.b':'<p>Fibre che portano <b>glutammato</b> dalla corteccia e dal talamo: è il segnale che dice al neurone ricevente <b>cosa</b> sta succedendo e quale azione è possibile. Arrivano impulsi di fondo (1 Hz) più altri che crescono con lo <i class="c-dopa">stimolo</i>.</p><p>Quando un impulso arriva, il neurone <i class="c-fire">scarica</i> (luce azzurra) solo se la dopamina lo ha reso <i class="c-act">ricettivo</i>; altrimenti l\'impulso si spegne sulla membrana (anello grigio). Stesso ingresso, risposta diversa: è questo il lavoro della dopamina.</p><p>Adesso: impulsi <b>{hz} Hz</b> per neurone · scariche <b>{fires}/s</b> · passati <b>{passed}</b>, spenti <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>Sono gli <b>assoni</b> dei neuroni della corteccia (e del talamo): fanno sinapsi sui <b>dendriti</b> del neurone ricevente, accanto ai contatti della dopamina. Qui entrano da destra per chiarezza.</p><p>Fibre che portano <b>glutammato</b> dalla corteccia e dal talamo: è il segnale che dice al neurone ricevente <b>cosa</b> sta succedendo e quale azione è possibile. Arrivano impulsi di fondo (1 Hz) più altri che crescono con lo <i class="c-dopa">stimolo</i>.</p><p>Quando un impulso arriva, il neurone <i class="c-fire">scarica</i> (luce azzurra) solo se la dopamina lo ha reso <i class="c-act">ricettivo</i>; altrimenti l\'impulso si spegne sulla membrana (anello grigio). Stesso ingresso, risposta diversa: è questo il lavoro della dopamina.</p><p>Adesso: impulsi <b>{hz} Hz</b> per neurone · scariche <b>{fires}/s</b> · passati <b>{passed}</b>, spenti <b>{lost}</b>.</p>',
   'tip.post.b':'<p>Un neurone a valle (per esempio nello striato o nella corteccia prefrontale). Somma il segnale dei legami sui recettori <i class="c-d2">D2</i>; superata la <b>soglia</b> diventa <i class="c-act">ricettivo</i> e la ciambella si fa gialla. Non è "acceso": a farlo <i class="c-fire">scaricare</i> (luce azzurra) è l\'impulso che arriva dalla <b>corteccia</b>, da destra, e passa solo se il neurone è ricettivo. È lì che motivazione e attenzione "scattano".</p>',
   'tip.post.state':'<p>Stato: <b>{state}</b> · segnale al <b>{sig}%</b> della soglia.</p>',
   'u.state.receptive':'RICETTIVO','u.state.silent':'silente',

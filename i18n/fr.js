@@ -30,7 +30,7 @@ I18N.fr={
   'cv.terminal':'NEURONE DOPAMINERGIQUE','cv.cleft':'FENTE SYNAPTIQUE','cv.post':'NEURONES RÉCEPTEURS',
   'cv.axon':'axone','cv.snap':'SNAP25 · zone active','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ recycle','cv.maob':'MAO','cv.maobsub':'✕ dégrade',
   'cv.receptive':'RÉCEPTIF','cv.silent':'silencieux','cv.threshold':'seuil','cv.d2':'D2 · {n}',
-  'cv.cortex':'cortex',
+  'cv.cortex':'axones du cortex',
   'cv.rel':' libération','cv.reab':' recapture','cv.dead':' détruites',
 
   't.mode.adhd.t':'🧠 Cerveau TDAH',
@@ -149,7 +149,7 @@ I18N.fr={
   'tip.cleft.b':'<p>L\'espace (environ 20 nm) entre les deux neurones. Ici, la <i class="c-dopa">dopamine</i> diffuse à la recherche d\'un récepteur <i class="c-d2">D2</i>, au risque de la recapture (<i class="c-dat">DAT1</i>) ou de la dégradation (<i class="c-comt">COMT</i>).</p><p>Molécules libres maintenant : <b>{free}</b>.</p>',
   'tip.post.t':'Neurone récepteur',
   'tip.cortex.t':'Entrée depuis le cortex',
-  'tip.cortex.b':'<p>Fibres qui apportent du <b>glutamate</b> depuis le cortex et le thalamus : le signal qui dit au neurone receveur <b>ce qui</b> se passe et quelle action est possible. Des impulsions de fond arrivent (1 Hz), plus d\'autres qui croissent avec le <i class="c-dopa">stimulus</i>.</p><p>Quand une impulsion arrive, le neurone <i class="c-fire">décharge</i> (lumière cyan) seulement si la dopamine l\'a rendu <i class="c-act">réceptif</i> ; sinon l\'impulsion s\'éteint sur la membrane (anneau gris). Même entrée, réponse différente : c\'est le travail de la dopamine.</p><p>Maintenant : impulsions <b>{hz} Hz</b> par neurone · décharges <b>{fires}/s</b> · passées <b>{passed}</b>, éteintes <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>Ce sont les <b>axones</b> de neurones du cortex (et du thalamus) : ils font synapse sur les <b>dendrites</b> du neurone receveur, à côté des contacts de la dopamine. Ici, ils entrent par la droite pour plus de clarté.</p><p>Fibres qui apportent du <b>glutamate</b> depuis le cortex et le thalamus : le signal qui dit au neurone receveur <b>ce qui</b> se passe et quelle action est possible. Des impulsions de fond arrivent (1 Hz), plus d\'autres qui croissent avec le <i class="c-dopa">stimulus</i>.</p><p>Quand une impulsion arrive, le neurone <i class="c-fire">décharge</i> (lumière cyan) seulement si la dopamine l\'a rendu <i class="c-act">réceptif</i> ; sinon l\'impulsion s\'éteint sur la membrane (anneau gris). Même entrée, réponse différente : c\'est le travail de la dopamine.</p><p>Maintenant : impulsions <b>{hz} Hz</b> par neurone · décharges <b>{fires}/s</b> · passées <b>{passed}</b>, éteintes <b>{lost}</b>.</p>',
   'tip.post.b':'<p>Un neurone en aval (dans le striatum ou le cortex préfrontal, par exemple). Il additionne le signal des liaisons sur ses récepteurs <i class="c-d2">D2</i> ; passé le <b>seuil</b>, il devient <i class="c-act">réceptif</i> et l\'anneau devient jaune. Il n\'est pas « allumé » : ce qui le fait <i class="c-fire">décharger</i> (lumière cyan), c\'est l\'impulsion qui arrive du <b>cortex</b>, par la droite, et elle ne passe que si le neurone est réceptif. C\'est là que motivation et attention « s\'enclenchent ».</p>',
   'tip.post.state':'<p>État : <b>{state}</b> · signal à <b>{sig} %</b> du seuil.</p>',
   'u.state.receptive':'RÉCEPTIF','u.state.silent':'silencieux',

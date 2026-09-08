@@ -30,7 +30,7 @@ I18N.de={
   'cv.terminal':'DOPAMIN-NEURON','cv.cleft':'SYNAPTISCHER SPALT','cv.post':'EMPFANGENDE NEURONEN',
   'cv.axon':'Axon','cv.snap':'SNAP25 · aktive Zone','cv.vmat2':'VMAT2','cv.vmat2sub':'♻ recycelt','cv.maob':'MAO','cv.maobsub':'✕ baut ab',
   'cv.receptive':'EMPFÄNGLICH','cv.silent':'still','cv.threshold':'Schwelle','cv.d2':'D2 · {n}',
-  'cv.cortex':'Cortex',
+  'cv.cortex':'Axone aus dem Cortex',
   'cv.rel':' Freisetzung','cv.reab':' Wiederaufnahme','cv.dead':' abgebaut',
 
   't.mode.adhd.t':'🧠 ADHS-Gehirn',
@@ -149,7 +149,7 @@ I18N.de={
   'tip.cleft.b':'<p>Der Raum (etwa 20 nm) zwischen den beiden Neuronen. Hier diffundiert das <i class="c-dopa">Dopamin</i> auf der Suche nach einem <i class="c-d2">D2</i>-Rezeptor, riskiert aber Wiederaufnahme (<i class="c-dat">DAT1</i>) oder Abbau (<i class="c-comt">COMT</i>).</p><p>Freie Moleküle jetzt: <b>{free}</b>.</p>',
   'tip.post.t':'Empfangendes Neuron',
   'tip.cortex.t':'Eingang aus dem Cortex',
-  'tip.cortex.b':'<p>Fasern, die <b>Glutamat</b> aus Cortex und Thalamus bringen: das Signal, das dem empfangenden Neuron sagt, <b>was</b> gerade passiert und welche Handlung möglich ist. Es kommen Grundimpulse (1 Hz) plus weitere, die mit dem <i class="c-dopa">Reiz</i> zunehmen.</p><p>Kommt ein Impuls an, <i class="c-fire">feuert</i> das Neuron (cyanblaues Licht) nur, wenn Dopamin es <i class="c-act">empfänglich</i> gemacht hat; sonst verlischt der Impuls an der Membran (grauer Ring). Gleicher Eingang, andere Antwort: das ist die Arbeit des Dopamins.</p><p>Jetzt: Impulse <b>{hz} Hz</b> pro Neuron · Entladungen <b>{fires}/s</b> · durchgekommen <b>{passed}</b>, verloschen <b>{lost}</b>.</p>',
+  'tip.cortex.b':'<p>Das sind die <b>Axone</b> von Neuronen des Cortex (und des Thalamus): Sie bilden Synapsen an den <b>Dendriten</b> des empfangenden Neurons, neben den Dopaminkontakten. Hier kommen sie der Übersicht halber von rechts.</p><p>Fasern, die <b>Glutamat</b> aus Cortex und Thalamus bringen: das Signal, das dem empfangenden Neuron sagt, <b>was</b> gerade passiert und welche Handlung möglich ist. Es kommen Grundimpulse (1 Hz) plus weitere, die mit dem <i class="c-dopa">Reiz</i> zunehmen.</p><p>Kommt ein Impuls an, <i class="c-fire">feuert</i> das Neuron (cyanblaues Licht) nur, wenn Dopamin es <i class="c-act">empfänglich</i> gemacht hat; sonst verlischt der Impuls an der Membran (grauer Ring). Gleicher Eingang, andere Antwort: das ist die Arbeit des Dopamins.</p><p>Jetzt: Impulse <b>{hz} Hz</b> pro Neuron · Entladungen <b>{fires}/s</b> · durchgekommen <b>{passed}</b>, verloschen <b>{lost}</b>.</p>',
   'tip.post.b':'<p>Ein nachgeschaltetes Neuron (zum Beispiel im Striatum oder im präfrontalen Cortex). Es summiert das Signal der Bindungen an seinen <i class="c-d2">D2</i>-Rezeptoren; über der <b>Schwelle</b> wird es <i class="c-act">empfänglich</i> und der Ring wird gelb. Es ist nicht „eingeschaltet“: was es <i class="c-fire">feuern</i> lässt (cyanblaues Licht), ist der Impuls, der von rechts aus dem <b>Cortex</b> kommt, und der nur durchkommt, wenn das Neuron empfänglich ist. Hier „zünden“ Motivation und Aufmerksamkeit.</p>',
   'tip.post.state':'<p>Zustand: <b>{state}</b> · Signal bei <b>{sig} %</b> der Schwelle.</p>',
   'u.state.receptive':'EMPFÄNGLICH','u.state.silent':'still',
