@@ -167,7 +167,7 @@ I18N.it={
   'tip.rates.t':'Rilascio, ricaptazione, distruzione',
   'tip.rates.b':'<p><i class="c-dopa">▸ {rel}/s</i> molecole immesse nella fessura · <i class="c-dat">◂ {reab}/s</i> riprese dai DAT1 · <i class="c-dead">✕ {dead}/s</i> distrutte (medie su 2 s).</p><p>Le distrutte <b>non</b> sono comprese nella ricaptazione: la <i class="c-comt">COMT</i> le degrada nella fessura, la <i class="c-dead">MAO</i> ne prende una quota di quelle ricaptate (il resto lo ricicla <i class="c-vmat">VMAT2</i>).</p><p>Libere adesso: <b>{free}</b> · legami D2 finora <b>{binds}</b> · riciclate <b>{rec}</b> · distrutte <b>{deadTot}</b>.</p>',
   'tip.mode-adhd.t':'Cervello ADHD',
-  'tip.mode-adhd.b':'<p>Recettori D2: <b>5</b> per neurone · DAT1: <b>5</b>, velocità <b>×2</b> · COMT: <b>×2,4</b> · riciclo VMAT2: <b>55%</b>.</p><p>Meno segnale per la stessa dopamina: servono <b>stimoli forti</b> (novità, sfida, urgenza) per accendere i neuroni. Valori esagerati apposta: nella realtà le differenze sono più piccole e variano da persona a persona.</p>',
+  'tip.mode-adhd.b':'<p>Recettori D2: <b>5</b> per neurone · DAT1: <b>5</b>, velocità <b>×2</b> · COMT: <b>5</b> (×2,4) · riciclo VMAT2: <b>55%</b>.</p><p>Meno segnale per la stessa dopamina: servono <b>stimoli forti</b> (novità, sfida, urgenza) per accendere i neuroni. Valori esagerati apposta: nella realtà le differenze sono più piccole e variano da persona a persona.</p>',
   'tip.mode-normal.t':'Cervello neurotipico',
   'tip.mode-normal.b':'<p>Recettori D2: <b>12</b> per neurone · DAT1: <b>3</b>, velocità <b>×0,7</b> · riciclo VMAT2: <b>75%</b>.</p><p>Basta poca dopamina per rendere <i class="c-act">ricettivi</i> i neuroni.</p>',
   'tip.stimulus.t':'Stimolo',

@@ -163,7 +163,7 @@ I18N.ko={
   'tip.rates.t':'방출, 재흡수, 파괴',
   'tip.rates.b':'<p><i class="c-dopa">▸ {rel}/초</i> 틈으로 방출된 분자 · <i class="c-dat">◂ {reab}/초</i> DAT1이 재흡수 · <i class="c-dead">✕ {dead}/초</i> 파괴 (2초 평균).</p><p>파괴된 분자는 재흡수에 <b>포함되지 않습니다</b>: <i class="c-comt">COMT</i>는 틈에서 분해하고, <i class="c-dead">MAO</i>는 재흡수된 분자 가운데 일부를 처리합니다(나머지는 <i class="c-vmat">VMAT2</i>가 재활용).</p><p>현재 자유: <b>{free}</b> · 지금까지 D2 결합 <b>{binds}</b> · 재활용 <b>{rec}</b> · 파괴 <b>{deadTot}</b>.</p>',
   'tip.mode-adhd.t':'ADHD 뇌',
-  'tip.mode-adhd.b':'<p>D2 수용체: 뉴런당 <b>5</b>개 · DAT1: <b>5</b>개, 속도 <b>×2</b> · COMT: <b>×2.4</b> · VMAT2 재활용: <b>55%</b>.</p><p>같은 도파민으로 더 적은 신호: 뉴런을 켜려면 <b>강한 자극</b>(새로움, 도전, 긴급함)이 필요합니다. 일부러 과장한 값이며, 실제로는 차이가 더 작고 사람마다 다릅니다.</p>',
+  'tip.mode-adhd.b':'<p>D2 수용체: 뉴런당 <b>5</b>개 · DAT1: <b>5</b>개, 속도 <b>×2</b> · COMT: <b>5</b> (×2.4) · VMAT2 재활용: <b>55%</b>.</p><p>같은 도파민으로 더 적은 신호: 뉴런을 켜려면 <b>강한 자극</b>(새로움, 도전, 긴급함)이 필요합니다. 일부러 과장한 값이며, 실제로는 차이가 더 작고 사람마다 다릅니다.</p>',
   'tip.mode-normal.t':'신경전형 뇌',
   'tip.mode-normal.b':'<p>D2 수용체: 뉴런당 <b>12</b>개 · DAT1: <b>3</b>개, 속도 <b>×0.7</b> · VMAT2 재활용: <b>75%</b>.</p><p>적은 도파민으로도 뉴런이 <i class="c-act">수용 상태</i>가 됩니다.</p>',
   'tip.stimulus.t':'자극',

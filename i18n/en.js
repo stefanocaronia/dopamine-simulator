@@ -160,7 +160,7 @@ I18N.en={
   'tip.rates.t':'Release, reuptake, destruction',
   'tip.rates.b':'<p><i class="c-dopa">▸ {rel}/s</i> molecules released into the cleft · <i class="c-dat">◂ {reab}/s</i> taken back up by DAT1 · <i class="c-dead">✕ {dead}/s</i> destroyed (2 s averages).</p><p>The destroyed ones are <b>not</b> included in reuptake: <i class="c-comt">COMT</i> degrades them in the cleft, <i class="c-dead">MAO</i> takes a share of the recaptured ones (the rest is recycled by <i class="c-vmat">VMAT2</i>).</p><p>Free now: <b>{free}</b> · D2 bindings so far <b>{binds}</b> · recycled <b>{rec}</b> · destroyed <b>{deadTot}</b>.</p>',
   'tip.mode-adhd.t':'ADHD brain',
-  'tip.mode-adhd.b':'<p>D2 receptors: <b>5</b> per neuron · DAT1: <b>5</b>, speed <b>×2</b> · COMT: <b>×2.4</b> · VMAT2 recycling: <b>55%</b>.</p><p>Less signal for the same dopamine: <b>strong stimuli</b> (novelty, challenge, urgency) are needed to switch the neurons on. Deliberately exaggerated values: in reality the differences are smaller and vary from person to person.</p>',
+  'tip.mode-adhd.b':'<p>D2 receptors: <b>5</b> per neuron · DAT1: <b>5</b>, speed <b>×2</b> · COMT: <b>5</b> (×2.4) · VMAT2 recycling: <b>55%</b>.</p><p>Less signal for the same dopamine: <b>strong stimuli</b> (novelty, challenge, urgency) are needed to switch the neurons on. Deliberately exaggerated values: in reality the differences are smaller and vary from person to person.</p>',
   'tip.mode-normal.t':'Neurotypical brain',
   'tip.mode-normal.b':'<p>D2 receptors: <b>12</b> per neuron · DAT1: <b>3</b>, speed <b>×0.7</b> · VMAT2 recycling: <b>75%</b>.</p><p>A little dopamine is enough to make the neurons <i class="c-act">receptive</i>.</p>',
   'tip.stimulus.t':'Stimulus',

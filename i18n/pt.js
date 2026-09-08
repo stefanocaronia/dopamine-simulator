@@ -160,7 +160,7 @@ I18N.pt={
   'tip.rates.t':'Liberação, recaptação, destruição',
   'tip.rates.b':'<p><i class="c-dopa">▸ {rel}/s</i> moléculas liberadas na fenda · <i class="c-dat">◂ {reab}/s</i> recaptadas pelos DAT1 · <i class="c-dead">✕ {dead}/s</i> destruídas (médias de 2 s).</p><p>As destruídas <b>não</b> estão incluídas na recaptação: a <i class="c-comt">COMT</i> as degrada na fenda, a <i class="c-dead">MAO</i> fica com uma parte das recaptadas (o resto o <i class="c-vmat">VMAT2</i> recicla).</p><p>Livres agora: <b>{free}</b> · ligações D2 até agora <b>{binds}</b> · recicladas <b>{rec}</b> · destruídas <b>{deadTot}</b>.</p>',
   'tip.mode-adhd.t':'Cérebro TDAH',
-  'tip.mode-adhd.b':'<p>Receptores D2: <b>5</b> por neurônio · DAT1: <b>5</b>, velocidade <b>×2</b> · COMT: <b>×2,4</b> · reciclagem VMAT2: <b>55%</b>.</p><p>Menos sinal para a mesma dopamina: são necessários <b>estímulos fortes</b> (novidade, desafio, urgência) para acender os neurônios. Valores exagerados de propósito: na realidade as diferenças são menores e variam de pessoa para pessoa.</p>',
+  'tip.mode-adhd.b':'<p>Receptores D2: <b>5</b> por neurônio · DAT1: <b>5</b>, velocidade <b>×2</b> · COMT: <b>5</b> (×2,4) · reciclagem VMAT2: <b>55%</b>.</p><p>Menos sinal para a mesma dopamina: são necessários <b>estímulos fortes</b> (novidade, desafio, urgência) para acender os neurônios. Valores exagerados de propósito: na realidade as diferenças são menores e variam de pessoa para pessoa.</p>',
   'tip.mode-normal.t':'Cérebro neurotípico',
   'tip.mode-normal.b':'<p>Receptores D2: <b>12</b> por neurônio · DAT1: <b>3</b>, velocidade <b>×0,7</b> · reciclagem VMAT2: <b>75%</b>.</p><p>Pouca dopamina basta para tornar os neurônios <i class="c-act">receptivos</i>.</p>',
   'tip.stimulus.t':'Estímulo',

@@ -163,7 +163,7 @@ I18N.zh={
   'tip.rates.t':'释放、再摄取、破坏',
   'tip.rates.b':'<p><i class="c-dopa">▸ {rel}/秒</i> 被送进间隙的分子 · <i class="c-dat">◂ {reab}/秒</i> 被 DAT1 收回 · <i class="c-dead">✕ {dead}/秒</i> 被破坏（2 秒平均值）。</p><p>被破坏的分子<b>不</b>算在再摄取里：<i class="c-comt">COMT</i> 直接在间隙里降解它们，而 <i class="c-dead">MAO</i> 处理的是被再摄取回来的那批里的一部分（其余由 <i class="c-vmat">VMAT2</i> 回收）。</p><p>当前自由：<b>{free}</b> · 迄今 D2 结合 <b>{binds}</b> · 回收 <b>{rec}</b> · 破坏 <b>{deadTot}</b>。</p>',
   'tip.mode-adhd.t':'多动症大脑',
-  'tip.mode-adhd.b':'<p>D2 受体：每个神经元 <b>5</b> 个 · DAT1：<b>5</b> 个，速度 <b>×2</b> · COMT：<b>×2.4</b> · VMAT2 回收：<b>55%</b>。</p><p>同样多的多巴胺换来的信号更少：需要<b>强刺激</b>（新奇、挑战、紧迫）才能点亮神经元。这些数值是故意夸大的：现实中差别要小得多，而且因人而异。</p>',
+  'tip.mode-adhd.b':'<p>D2 受体：每个神经元 <b>5</b> 个 · DAT1：<b>5</b> 个，速度 <b>×2</b> · COMT：<b>5</b> (×2.4) · VMAT2 回收：<b>55%</b>。</p><p>同样多的多巴胺换来的信号更少：需要<b>强刺激</b>（新奇、挑战、紧迫）才能点亮神经元。这些数值是故意夸大的：现实中差别要小得多，而且因人而异。</p>',
   'tip.mode-normal.t':'神经典型大脑',
   'tip.mode-normal.b':'<p>D2 受体：每个神经元 <b>12</b> 个 · DAT1：<b>3</b> 个，速度 <b>×0.7</b> · VMAT2 回收：<b>75%</b>。</p><p>少量多巴胺就足以让神经元变得<i class="c-act">可响应</i>。</p>',
   'tip.stimulus.t':'刺激',
