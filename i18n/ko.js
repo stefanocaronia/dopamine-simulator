@@ -63,7 +63,7 @@ I18N.ko={
   't.trend.empty':', 약 {s}초 후 소진',
   't.trend.up':'<i class="c-dopa">저장량</i>이 <b>회복 중</b>입니다 (<b>+{tr}%/초</b>).',
   't.trend.hold':'<i class="c-dopa">저장량</i>이 <b>유지</b>됩니다 ({tr}%/초).',
-  'u.receptive':'뉴런이 반응 준비 상태인 시간: <b>{p}%</b>',
+  'u.receptive':'뉴런이 반응 준비 상태인 시간: <b>{p}%</b>, 피질 임펄스의 <b>{q}%</b>를 통과시킵니다',
   'u.onfor':'켠 지 {n}초',
   'u.sec':'{n}초',
   'u.d2':'D2 {rec}/{full}',

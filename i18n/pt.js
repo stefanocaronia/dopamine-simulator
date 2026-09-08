@@ -61,7 +61,7 @@ I18N.pt={
   't.trend.empty':', vazia em ~{s} s',
   't.trend.up':'A <i class="c-dopa">reserva</i> está <b>recarregando</b> (<b>+{tr}%/s</b>).',
   't.trend.hold':'A <i class="c-dopa">reserva</i> <b>se mantém</b> ({tr}%/s).',
-  'u.receptive':'neurônios receptivos <b>{p}%</b> do tempo',
+  'u.receptive':'neurônios receptivos <b>{p}%</b> do tempo, deixando passar <b>{q}%</b> dos impulsos do córtex',
   'u.onfor':'ligado há {n} s',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',

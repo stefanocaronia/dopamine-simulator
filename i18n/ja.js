@@ -63,7 +63,7 @@ I18N.ja={
   't.trend.empty':'、約 {s} 秒で空',
   't.trend.up':'<i class="c-dopa">貯蔵量</i>が<b>回復中</b>です（<b>+{tr}%/秒</b>）。',
   't.trend.hold':'<i class="c-dopa">貯蔵量</i>は<b>横ばい</b>です（{tr}%/秒）。',
-  'u.receptive':'ニューロンが反応できる状態の時間: <b>{p}%</b>',
+  'u.receptive':'ニューロンが反応できる状態の時間: <b>{p}%</b>、皮質からのインパルスの <b>{q}%</b> を通します',
   'u.onfor':'オンにして {n} 秒',
   'u.sec':'{n} 秒',
   'u.d2':'D2 {rec}/{full}',

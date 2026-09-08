@@ -61,7 +61,7 @@ I18N.de={
   't.trend.empty':', leer in ~{s} s',
   't.trend.up':'Die <i class="c-dopa">Reserve</i> <b>füllt sich</b> (<b>+{tr} %/s</b>).',
   't.trend.hold':'Die <i class="c-dopa">Reserve</i> <b>hält</b> ({tr} %/s).',
-  'u.receptive':'Neuronen <b>{p} %</b> der Zeit empfänglich',
+  'u.receptive':'Neuronen <b>{p} %</b> der Zeit empfänglich, sie lassen <b>{q} %</b> der Impulse aus dem Cortex durch',
   'u.onfor':'seit {n} s an',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',

@@ -67,7 +67,7 @@ I18N.it={
   't.trend.empty':', vuota tra ~{s} s',
   't.trend.up':'La <i class="c-dopa">riserva</i> si <b>ricarica</b> (<b>+{tr}%/s</b>).',
   't.trend.hold':'La <i class="c-dopa">riserva</i> <b>regge</b> ({tr}%/s).',
-  'u.receptive':'neuroni ricettivi <b>{p}%</b> del tempo',
+  'u.receptive':'neuroni ricettivi <b>{p}%</b> del tempo, e lasciano passare il <b>{q}%</b> degli impulsi dalla corteccia',
   'u.onfor':'acceso da {n} s',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',

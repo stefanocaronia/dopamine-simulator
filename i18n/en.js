@@ -61,7 +61,7 @@ I18N.en={
   't.trend.empty':', empty in ~{s} s',
   't.trend.up':'The <i class="c-dopa">reserve</i> is <b>refilling</b> (<b>+{tr}%/s</b>).',
   't.trend.hold':'The <i class="c-dopa">reserve</i> is <b>holding</b> ({tr}%/s).',
-  'u.receptive':'neurons receptive <b>{p}%</b> of the time',
+  'u.receptive':'neurons receptive <b>{p}%</b> of the time, letting <b>{q}%</b> of the cortical impulses through',
   'u.onfor':'on for {n} s',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',

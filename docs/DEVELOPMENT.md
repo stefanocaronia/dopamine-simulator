@@ -19,7 +19,10 @@ js/ui.js            toasts, tooltips (TIPS), hit-test and hover, HUD, controls (
 js/main.js          bootstrap and requestAnimationFrame loop
 i18n/*.js           dictionaries registered on window.I18N (it, en, es, fr, de, pt, ru, zh, ja, ko, ar); it.js is the source of truth
 docs/fedelta-biologica.md   biological fidelity report (Italian)
+tests/run.js        headless integration tests (node tests/run.js): the model in a vm sandbox, about 80 checks
+tests/i18n.js       dictionary consistency check (keys, placeholders, tags, classes vs it.js)
 .github/workflows/pages.yml GitHub Pages deployment on every push to main
+.github/workflows/test.yml  runs node tests/run.js on every push and pull request
 ```
 Load order in `index.html` matters: util → i18n dictionaries → i18n → model → render → ui → main.
 
@@ -92,8 +95,9 @@ Interventions:
 
 ## 5. Running and testing
 - Any static server from the repo root (`python -m http.server 8080`), or open `index.html` directly.
+- `node tests/run.js` runs the integration tests without a browser: js/util.js and js/model.js are loaded in a `vm` sandbox with a seeded `Math.random` (`--seed=N` changes it, `--verbose` prints every measurement), the model is driven with `update(1/60)` exactly like the page, and about 80 checks cover release and firing by brain and stimulus, every intervention, substance and after-effect, sleep, brain switch, age, sleep debt, depletion, the time scale, COMT captures, the cortical input and state invariants, plus the dictionary check of `tests/i18n.js`. Expected values are ranges around the calibration below; when a model change moves them on purpose, update the test and the numbers here together. CI runs the same command on every push (`.github/workflows/test.yml`). Runs in about 10 s.
 - Manual checklist after a change: both languages, both brain modes, caffeine and methylphenidate toasts, depletion (stimulus 100% at 8× for a minute), pause, tooltip on a DAT1 and on a receiving cell, mobile width (375 px).
-- Sanity numbers (ADHD vs neurotypical, 30 simulated seconds at 2×): fraction of time with receptive neurons ≈ 0.01 vs 0.41 at 20% stimulus, 0.16 vs 0.84 at 40%, 0.82 vs 0.97 at 70%. Re-measure after touching the model.
+- Sanity numbers (seed 20260908 of the tests, speed 1, 30 s after a 10 s warm-up): fraction of time with receptive neurons 0.28 / 0.76 / 1.0 for the neurotypical brain at 10 / 30 / 100% stimulus, 0.07 / 0.25 for ADHD at 10 / 30%; firings 0.8 / 3.6 / 12 per second vs 0.1 / 1.5 in ADHD; methylphenidate lifts ADHD 10% to about 0.27, caffeine lifts neurotypical 10% to about 0.5; a dose of cocaine costs about 50% of D2 sensitivity, 20 s of easy rewards 40%; COMT eats 14 (neurotypical) or 23 (ADHD) molecules in 30 s at 60%.
 - Performance target: under 1 ms per frame (update + render) with 500 particles. Measured 0.5–0.75 ms.
 
 ### Testing with an automated browser
@@ -141,6 +145,6 @@ Consistency check (node): load every dictionary and compare keys, `{placeholders
 
 - v3.6, 2026-09-08: spike-locked release: a tonic pacemaker (3 Hz) and phasic bursts (4–6 spikes at 20 Hz, rate set by the stimulus, exercise and substances) travel down the axon and fuse their vesicles on arrival; the terminal lights up cyan at every spike and the active zone flashes at every fusion; spikes/s and bursts/s in the stimulus toast and the axon tooltip; receiving-cell light as an impulse (hold, sustain, falloff); trails as spark dust instead of line segments; COMT captures made visible (the molecule is pulled into the Pac-Man, turns red and vanishes with a red ring, the enzyme swells and chomps, a counter under each shows what it ate), 5 COMT in ADHD vs 3 with a real capture rate (about 1.2/s per enzyme at contact; before, the Pac-Men ate 2 molecules in 30 s and the "destroyed by COMT" count was almost all expired molecules), and molecules that expire after 2 s in the cleft now fade out green and count as dispersed (`stats.lost`), not as COMT kills
 
-- v3.7, 2026-09-08: receiving neurons fire only when a cortical input pulse arrives while they are receptive; cortical fibres in a right-hand corridor with pulses at 1 Hz + 3 Hz × stimulus; firings/s in the stimulus toast; colour code split: yellow = receptive (gauge, label, texts), cyan = firing (cell light) on both sides; "go and brake" (direct/indirect pathway) explained in How it works and the D2/D1 sign simplification declared in Model vs reality
+- v3.7, 2026-09-08: receiving neurons fire only when a cortical input pulse arrives while they are receptive; cortical fibres in a right-hand corridor with pulses at 1 Hz + 3 Hz × stimulus; firings/s in the stimulus toast; colour code split: yellow = receptive (gauge, label, texts), cyan = firing (cell light) on both sides; "go and brake" (direct/indirect pathway) explained in How it works and the D2/D1 sign simplification declared in Model vs reality; the receptive line of the stimulus toast also says which share of the cortical impulses gets through (`passPct()`); headless integration tests in `tests/` with a CI workflow
 
 Earlier single-file versions can be retrieved with `git show <commit>:come-funziona-la-dopamina.html`.

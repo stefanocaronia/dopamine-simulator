@@ -17,7 +17,7 @@ function stimToast(){
   const v=Math.round(stimulus*100);
   // activeShown: % di tempo ricettivo (media lenta, passi del 5%); sotto il 5% ma non zero si scrive "<5", così le accensioni rare non spariscono
   const p=activeShown>0?String(activeShown):(activeAvg>0.003?'<5':'0');
-  const P={rel:displayRelRate,act:T('u.receptive',{p}),trend:trendText()};
+  const P={rel:displayRelRate,act:T('u.receptive',{p,q:passPct()}),trend:trendText()};   // q: impulsi dalla corteccia passati (%)
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
   const spk='<p>'+T('u.spikes',{hz:displaySpikeRate,b:fmt1(displayBurstRate)})+' · '+T('u.fires',{n:fmt1(displayFireRate)})+'</p>';   // scarica: impulsi/s, raffiche/s e scariche dei neuroni riceventi
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)+spk};

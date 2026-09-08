@@ -61,7 +61,7 @@ I18N.fr={
   't.trend.empty':', vide dans ~{s} s',
   't.trend.up':'La <i class="c-dopa">réserve</i> se <b>recharge</b> (<b>+{tr} %/s</b>).',
   't.trend.hold':'La <i class="c-dopa">réserve</i> <b>tient</b> ({tr} %/s).',
-  'u.receptive':'neurones réceptifs <b>{p} %</b> du temps',
+  'u.receptive':'neurones réceptifs <b>{p} %</b> du temps, laissant passer <b>{q} %</b> des impulsions du cortex',
   'u.onfor':'allumé depuis {n} s',
   'u.sec':'{n} s',
   'u.d2':'D2 {rec}/{full}',

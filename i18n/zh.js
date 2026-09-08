@@ -63,7 +63,7 @@ I18N.zh={
   't.trend.empty':'，约 {s} 秒后耗尽',
   't.trend.up':'<i class="c-dopa">储备</i>正在<b>回充</b>（<b>+{tr}%/秒</b>）。',
   't.trend.hold':'<i class="c-dopa">储备</i><b>保持稳定</b>（{tr}%/秒）。',
-  'u.receptive':'神经元可响应的时间占 <b>{p}%</b>',
+  'u.receptive':'神经元可响应的时间占 <b>{p}%</b>，放行了 <b>{q}%</b> 的皮层脉冲',
   'u.onfor':'已开启 {n} 秒',
   'u.sec':'{n} 秒',
   'u.d2':'D2 {rec}/{full}',

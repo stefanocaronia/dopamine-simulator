@@ -72,7 +72,7 @@ let age=AGE_REF;
 let subst={nic:{t:0,after:0},can:{t:0,after:0},alc:{t:0,after:0},coc:{t:0,after:0}};   // t: effetto attivo, after: effetto successivo (secondi reali)
 // Tassi mostrati: contati in una finestra di 0,5 s reali e divisi per il tempo simulato trascorso (rateSim), quindi
 // per secondo simulato, coerenti con i numeri dei testi (3 Hz, 30/s) a qualunque velocità; impulsi e raffiche con media mobile
-let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,rateFireCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,displayFireRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0,fireEma=0;
+let rateWindow=0,rateSim=0,rateRelCount=0,rateReabCount=0,rateDeadCount=0,rateSpikeCount=0,rateBurstCount=0,rateFireCount=0,rateMissCount=0,displayRelRate=0,displayReabRate=0,displayDeadRate=0,displaySpikeRate=0,displayBurstRate=0,displayFireRate=0,relEma=0,reabEma=0,deadEma=0,spikeEma=0,burstEma=0,fireEma=0,missEma=0;
 let now=0;
 // Scarica: pacemaker (tonicAccum), raffiche in attesa (burstAccum), coda di impulsi da emettere a 20 Hz (spikeQ, spikeTimer)
 // e resto frazionario delle vescicole per impulso (vesAccum): le medie restano esatte anche con moltiplicatori non interi
@@ -195,6 +195,8 @@ function supply(){return Math.min(1,(vesCount/MAX_VES)/DEPLETE_FROM);}
 // Soglia di attivazione: sale con il debito percepito e con i postumi; la caffeina la abbassa
 function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineActive?CAFF_THRESH:1)*threshMult();}
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
+// Quota degli impulsi corticali che passano (media mobile): i neuroni "rispondono al q% degli stimoli"
+function passPct(){const s=fireEma+missEma;return s>0?Math.round(100*fireEma/s):0;}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
 // ───────────────────────── Scarica: impulsi e raffiche ─────────────────────────
@@ -374,7 +376,7 @@ function update(dt){
     for(const u of n.inPulses){u.s+=sdt/CTX_TRAVEL;
       if(u.s>=1){const g=postGeom(postNeurons.indexOf(n));
         if(n.active){n.glow=1;n.hold=0.06;n.fires++;stats.fires++;rateFireCount++;fx(g.x1-2,g.ncy,C.active,4,20,.45);}   // scarica: luce azzurra a impulso
-        else{n.misses++;stats.misses++;fx(g.x1-2,g.ncy,'#7d8fa6',3,9,.3);}}}   // impulso perso: piccolo anello grigio
+        else{n.misses++;stats.misses++;rateMissCount++;fx(g.x1-2,g.ncy,'#7d8fa6',3,9,.3);}}}   // impulso perso: piccolo anello grigio
     n.inPulses=n.inPulses.filter(u=>u.s<1);
     // Luce della scarica: tenuta breve e dissolvenza, come il terminale
     if(n.hold>0)n.hold-=dt;else n.glow-=n.glow*Math.min(1,dt/0.15);
@@ -384,8 +386,8 @@ function update(dt){
   if(rateWindow>=0.5){const T=Math.max(1e-6,rateSim),k=0.3;relEma+=(rateRelCount/T-relEma)*k;reabEma+=(rateReabCount/T-reabEma)*k;deadEma+=(rateDeadCount/T-deadEma)*k;
     displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);
     spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
-    fireEma+=(rateFireCount/T-fireEma)*k;displayFireRate=Math.round(fireEma*10)/10;
-    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateWindow=0;rateSim=0;}
+    fireEma+=(rateFireCount/T-fireEma)*k;missEma+=(rateMissCount/T-missEma)*k;displayFireRate=Math.round(fireEma*10)/10;
+    rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateMissCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(dt>0){const dv=(vesCount-lastVes)/dt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}
@@ -462,7 +464,7 @@ function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
   sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
-  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;displayFireRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
+  particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;missEma=0;displayFireRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti
   for(const k in subst){subst[k].t=0;subst[k].after=0;}
