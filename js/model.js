@@ -80,10 +80,11 @@ let tonicAccum=0,burstAccum=0,spikeQ=[],spikeTimer=0,vesAccum=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
 // e stato con isteresi (trendState: full | down | up | hold) per evitare sfarfallii nei testi
 let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
-// Neuroni ricettivi: media lenta (~4 s) della quota di neuroni ricettivi (activeAvg, 0..1) e valore mostrato
-// campionato ogni secondo come percentuale di tempo a passi del 5% (activeShown). Un conteggio arrotondato
-// nascondeva le accensioni brevi (0,3 neuroni in media diventava "0/3")
-let activeAvg=0,activeShown=0;
+// Percentuali mostrate nei testi: medie lente (~7 s) campionate ogni secondo, a passi del 5% e con isteresi
+// (vedi stickyPct), altrimenti un valore a metà tra due passi fa ballare il numero mentre la simulazione gira.
+// activeAvg = quota di neuroni ricettivi (0..1); passAvg = quota di impulsi corticali che passano (0..1).
+// Un conteggio arrotondato nascondeva le accensioni brevi (0,3 neuroni in media diventava "0/3"): da qui la percentuale
+let activeAvg=0,activeShown=0,passAvg=0,passShown=0;
 // Effetti visivi (non influenzano il modello)
 let pops=[],pulses=[],apPulses=[],motes=[];
 // Luce del terminale: lampo, mantenimento e dissolvenza a ogni impulso che arriva; snapGlow è il bagliore della zona attiva
@@ -196,8 +197,16 @@ function supply(){return Math.min(1,(vesCount/MAX_VES)/DEPLETE_FROM);}
 // Soglia di attivazione: sale con il debito percepito e con i postumi; la caffeina la abbassa
 function thresholdNow(){return ACT_THRESHOLD*(1+1.5*perceivedDebt())*(caffeineActive?CAFF_THRESH:1)*threshMult();}
 function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
-// Quota degli impulsi corticali che passano (media mobile): i neuroni "rispondono al q% degli stimoli"
-function passPct(){const s=fireEma+missEma;return s>0?Math.round(100*fireEma/s):0;}
+// Percentuale da mostrare: passi del 5%, ma cambia solo se il valore vero si scosta di più di un passo e mezzo dal
+// numero esposto. 0 e 100 solo quando lo sono davvero, così "0%" resta un'informazione e non un arrotondamento
+function stickyPct(shown,v){
+  const p=v*100;
+  if(p<=0.4)return 0;
+  if(p>=99)return 100;   // "100%" solo a sinapsi davvero satura: con la media lenta ci vuole una mezza minuto
+  return Math.abs(p-shown)>7?Math.max(5,Math.min(95,Math.round(p/5)*5)):shown;
+}
+// Quota degli impulsi corticali che fanno scaricare un neurone: i neuroni "rispondono al q% degli stimoli"
+function passPct(){return passShown;}
 function freeCount(){let n=0;for(const p of particles)if(p.state==='free')n++;return n;}
 
 // ───────────────────────── Scarica: impulsi e raffiche ─────────────────────────
@@ -388,15 +397,16 @@ function update(dt){
     displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);displayLostRate=Math.round(lostEma);
     spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
     fireEma+=(rateFireCount/T-fireEma)*k;missEma+=(rateMissCount/T-missEma)*k;displayFireRate=Math.round(fireEma*10)/10;
+    const tot=rateFireCount+rateMissCount;if(tot)passAvg+=(rateFireCount/tot-passAvg)*0.07;   // ~7 s, come le altre percentuali mostrate
     rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateLostCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateMissCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(sdt>0){const dv=(vesCount-lastVes)/sdt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}   // per secondo simulato, come sintesi (0,2/s) e rilascio
   lastVes=vesCount;
   let nAct=0;for(const n of postNeurons)if(n.active)nAct++;
-  if(postNeurons.length)activeAvg+=(nAct/postNeurons.length-activeAvg)*Math.min(1,dt*0.25);
+  if(postNeurons.length)activeAvg+=(nAct/postNeurons.length-activeAvg)*Math.min(1,dt*0.15);
   trendTimer+=dt;
-  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=Math.round(activeAvg*20)*5;}
+  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=stickyPct(activeShown,activeAvg);passShown=stickyPct(passShown,passAvg);}
 
   // Trasportatori DAT1: agganciano le particelle e le riportano dentro (il metilfenidato li rallenta e li fa fallire)
   for(const d of dat1s){
@@ -464,7 +474,7 @@ function setStimulus(v){stimulus=Math.max(0,Math.min(1,v));}
 function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
-  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;
+  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;passAvg=0;passShown=0;
   particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;missEma=0;lostEma=0;displayFireRate=0;displayLostRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti

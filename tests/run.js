@@ -132,6 +132,29 @@ reset({stim:0,speed:4});G('vesCount=50;lastVes=50;vesTrend=0;');run(8);const tr4
 within('reserve trend per simulated second at 1x',tr1,0.15,0.25);
 ok('reserve trend does not change with the time scale',Math.abs(tr4-tr1)<0.06,`${fmt(tr1)} vs ${fmt(tr4)} at 4x`);
 
+// ── E3. the two percentages shown in the stimulus toast ──
+section('E3. shown percentages');
+// they must be steady enough to read: quantized to 5% with hysteresis on a slow average
+function pctChanges(sec){let a=G('activeShown'),q=G('passPct()'),ca=0,cq=0;
+  for(let i=0;i<Math.round(sec/DT);i++){M.update(DT);const na=G('activeShown'),nq=G('passPct()');if(na!==a){ca++;a=na;}if(nq!==q){cq++;q=nq;}}
+  return {rec:ca,pass:cq};}
+reset({stim:0.3});run(20);let ch=pctChanges(60);
+ok('receptive % changes at most 12 times a minute at 30%',ch.rec<=12,ch.rec+' changes');
+ok('passed % changes at most 12 times a minute at 30%',ch.pass<=12,ch.pass+' changes');
+reset({mode:'adhd',stim:0.35});run(20);ch=pctChanges(60);
+ok('receptive % is steady in ADHD too',ch.rec<=12,ch.rec+' changes');
+// both are multiples of 5, or exactly 0 / 100
+reset({stim:0.5});run(40);s=S();
+ok('shown percentages are multiples of 5',G('activeShown')%5===0&&G('passPct()')%5===0,`${G('activeShown')}/${G('passPct()')}`);
+// at zero stimulus both must read exactly 0, so the toast can say it in words
+reset({stim:0});run(60);ch=pctChanges(30);
+ok('at zero stimulus the passed share reads exactly 0 (so the toast can say it in words)',G('passPct()')===0,G('passPct()'));
+ok('at zero stimulus the receptive share is 0 or the lowest step',G('activeShown')<=5,G('activeShown'));
+ok('at zero stimulus neither percentage moves',ch.rec+ch.pass<=1,`${ch.rec}+${ch.pass}`);
+// a saturated synapse must eventually read 100, not stay at the 95 cap
+reset({stim:1});run(60);
+ok('at full stimulus the passed share reaches 100',G('passPct()')===100,G('passPct()'));
+
 // ── F. invariants after a long mixed run ──
 section('F. invariants');
 reset({stim:0.5,speed:2});M.startCaffeine();M.startMph();M.startExercise();M.toggleScroll();for(const k of ['nic','can','alc','coc'])M.startSubst(k);run(60);M.toggleScroll();run(60);s=S();

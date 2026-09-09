@@ -14,13 +14,14 @@ function trendText(){
   return T('t.trend.hold',{tr:(tr>=0?'+':'')+fmt1(tr)});
 }
 function stimToast(){
-  const v=Math.round(stimulus*100);
-  // activeShown: % di tempo ricettivo (media lenta, passi del 5%); sotto il 5% ma non zero si scrive "<5", così le accensioni rare non spariscono
-  const p=activeShown>0?String(activeShown):(activeAvg>0.003?'<5':'0');
-  const P={rel:displayRelRate,act:T('u.receptive',{p,q:passPct()}),trend:trendText()};   // q: impulsi dalla corteccia passati (%)
+  const v=Math.round(stimulus*100),q=passPct();
+  // activeShown: % di tempo ricettivo (media lenta con isteresi); sotto il 5% ma non zero si scrive "&lt;5", così le accensioni rare non spariscono.
+  // Uno zero si dice a parole: un "0%" secco non fa capire che cosa manca
+  const p=activeShown>0?String(activeShown):(activeAvg>0.003?'&lt;5':'0');
+  const act=activeShown===0&&activeAvg<=0.003?T('u.receptive.none'):q===0?T('u.receptive.nopass',{p}):T('u.receptive',{p,q});
+  const P={rel:displayRelRate,act,trend:trendText()};
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
-  const spk='<p>'+T('u.spikes',{hz:displaySpikeRate,b:fmt1(displayBurstRate)})+' · '+T('u.fires',{n:fmt1(displayFireRate)})+'</p>';   // scarica: impulsi/s, raffiche/s e scariche dei neuroni riceventi
-  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)+spk};
+  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
 }
 function buildToasts(){
   const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
