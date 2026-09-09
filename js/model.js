@@ -80,11 +80,21 @@ let tonicAccum=0,burstAccum=0,spikeQ=[],spikeTimer=0,vesAccum=0;
 // Tendenza del serbatoio: media lenta (vesTrend, %/s), valore mostrato campionato ogni secondo (trendShown)
 // e stato con isteresi (trendState: full | down | up | hold) per evitare sfarfallii nei testi
 let lastVes=MAX_VES,vesTrend=0,trendShown=0,trendState='full',trendTimer=0;
-// Percentuali mostrate nei testi: medie lente (~7 s) campionate ogni secondo, a passi del 5% e con isteresi
-// (vedi stickyPct), altrimenti un valore a metà tra due passi fa ballare il numero mentre la simulazione gira.
-// activeAvg = quota di neuroni ricettivi (0..1); passAvg = quota di impulsi corticali che passano (0..1).
+// Percentuali mostrate nei testi: media su una finestra scorrevole di PCT_WINDOW secondi reali, divisa in intervalli
+// da mezzo secondo. Non è una media esponenziale: la finestra si svuota di netto, quindi dopo un cambio di slider il
+// numero è completamente aggiornato in pochi secondi e uno zero è uno zero vero, non la coda di una media che scende
+// (con l'esponenziale ci volevano decine di secondi per arrivare a "nessun impulso"). Il valore esposto passa poi da
+// stickyPct: passi del 5% con isteresi, che è ciò che toglie lo sfarfallio senza rallentare la risposta.
+// activeAvg = quota di neuroni ricettivi (0..1); passAvg = quota di impulsi corticali che fanno scaricare (0..1).
 // Un conteggio arrotondato nascondeva le accensioni brevi (0,3 neuroni in media diventava "0/3"): da qui la percentuale
-let activeAvg=0,activeShown=0,passAvg=0,passShown=0;
+// PCT_FAST/PCT_SLOW: la media della finestra viene ancora addolcita, in fretta quando si scosta di molto (l'utente ha
+// mosso uno slider) e piano quando oscilla di poco (rumore della simulazione)
+// Finestre diverse: la quota di neuroni ricettivi si misura a ogni fotogramma e 3 s bastano; quella degli impulsi
+// passati conta eventi radi (a stimolo basso pochi al secondo), quindi ne servono 5 per non ballare
+const PCT_SLOTS=10,PCT_ACT_SLOTS=6,PCT_FAST=0.5,PCT_SLOW=0.08,PCT_JUMP=0.15;
+let actSum=new Array(PCT_SLOTS).fill(0),actTime=new Array(PCT_SLOTS).fill(0),
+    passHit=new Array(PCT_SLOTS).fill(0),passTot=new Array(PCT_SLOTS).fill(0),pctSlot=0;
+let activeBox=0,passBox=0,activeAvg=0,activeShown=0,passAvg=0,passShown=0;
 // Effetti visivi (non influenzano il modello)
 let pops=[],pulses=[],apPulses=[],motes=[];
 // Luce del terminale: lampo, mantenimento e dissolvenza a ogni impulso che arriva; snapGlow è il bagliore della zona attiva
@@ -97,10 +107,10 @@ function setGeometry(w,h){
   CLEFT={x:PRE.w,y:0,w:W*.40,h:H};
   const dendGap=W*.05;
   POST={x:PRE.w+CLEFT.w+dendGap,y:0,w:W-PRE.w-CLEFT.w-dendGap-2,h:H,ctxW:Math.round(Math.max(20,Math.min(40,W*.045)))};   // ctxW: corridoio a destra per le fibre dalla corteccia (stretto sui telefoni, dove le celle hanno poco spazio)
-  SNAP={x:PRE.w-2,y:H*.05,w:10,h:H*.90};
   // Terminale assonico: forma a "D" con la faccia piatta sulla membrana presinaptica (x = PRE.w)
   const cy=H*.5,yTop=H*.06,yBot=H*.94;
   TERM={cx:PRE.w,cy,rx:PRE.w*.72,ry:(yBot-yTop)/2,yTop,yBot,axonR:H*.09};
+  SNAP={x:PRE.w-2,y:yTop,w:10,h:yBot-yTop};   // zona attiva: coincide con la faccia piatta della membrana
   TERM.thJ=Math.asin(TERM.axonR/TERM.ry);
   TERM.xJ=PRE.w-TERM.rx*Math.cos(TERM.thJ);
   VMAT_Z={x:PRE.w*.46,y:H*.24,w:PRE.w*.27,h:H*.17};
@@ -201,8 +211,8 @@ function halfLifeNow(){return SIGNAL_HALF_LIFE/(1+sleepDebt*1.2);}
 // numero esposto. 0 e 100 solo quando lo sono davvero, così "0%" resta un'informazione e non un arrotondamento
 function stickyPct(shown,v){
   const p=v*100;
-  if(p<=0.4)return 0;
-  if(p>=99)return 100;   // "100%" solo a sinapsi davvero satura: con la media lenta ci vuole una mezza minuto
+  if(p<=0)return 0;        // nella finestra non è successo niente: uno zero vero, che i testi dicono a parole
+  if(p>=100)return 100;    // tutti gli impulsi sono passati
   return Math.abs(p-shown)>7?Math.max(5,Math.min(95,Math.round(p/5)*5)):shown;
 }
 // Quota degli impulsi corticali che fanno scaricare un neurone: i neuroni "rispondono al q% degli stimoli"
@@ -385,7 +395,8 @@ function update(dt){
     while(n.ctxAccum>=1){n.ctxAccum-=1;if(n.inPulses.length<12)n.inPulses.push({s:0});}
     for(const u of n.inPulses){u.s+=sdt/CTX_TRAVEL;
       if(u.s>=1){const g=postGeom(postNeurons.indexOf(n));
-        if(n.active){n.glow=1;n.hold=0.06;n.fires++;stats.fires++;rateFireCount++;fx(g.x1-2,g.ncy,C.active,4,20,.45);}   // scarica: luce azzurra a impulso
+        passTot[pctSlot]++;
+        if(n.active){n.glow=1;n.hold=0.06;n.fires++;stats.fires++;rateFireCount++;passHit[pctSlot]++;fx(g.x1-2,g.ncy,C.active,4,20,.45);}   // scarica: luce azzurra a impulso
         else{n.misses++;stats.misses++;rateMissCount++;fx(g.x1-2,g.ncy,'#7d8fa6',3,9,.3);}}}   // impulso perso: piccolo anello grigio
     n.inPulses=n.inPulses.filter(u=>u.s<1);
     // Luce della scarica: tenuta breve e dissolvenza, come il terminale
@@ -397,16 +408,26 @@ function update(dt){
     displayRelRate=Math.round(relEma);displayReabRate=Math.round(reabEma);displayDeadRate=Math.round(deadEma);displayLostRate=Math.round(lostEma);
     spikeEma+=(rateSpikeCount/T-spikeEma)*k;burstEma+=(rateBurstCount/T-burstEma)*k;displaySpikeRate=Math.round(spikeEma);displayBurstRate=Math.round(burstEma*10)/10;
     fireEma+=(rateFireCount/T-fireEma)*k;missEma+=(rateMissCount/T-missEma)*k;displayFireRate=Math.round(fireEma*10)/10;
-    const tot=rateFireCount+rateMissCount;if(tot)passAvg+=(rateFireCount/tot-passAvg)*0.07;   // ~7 s, come le altre percentuali mostrate
+    // percentuali: media sulla finestra scorrevole, poi si passa all'intervallo successivo azzerandolo
+    let aS=0,aT=0,pH=0,pT=0;
+    for(let i=0;i<PCT_SLOTS;i++){pH+=passHit[i];pT+=passTot[i];}
+    for(let k=0;k<PCT_ACT_SLOTS;k++){const i=(pctSlot-k+PCT_SLOTS)%PCT_SLOTS;aS+=actSum[i];aT+=actTime[i];}
+    if(aT>0)activeBox=aS/aT;
+    passBox=pT>0?pH/pT:0;
+    activeAvg+=(activeBox-activeAvg)*(Math.abs(activeBox-activeAvg)>PCT_JUMP?PCT_FAST:PCT_SLOW);
+    passAvg+=(passBox-passAvg)*(Math.abs(passBox-passAvg)>PCT_JUMP?PCT_FAST:PCT_SLOW);
+    activeShown=stickyPct(activeShown,activeBox===0?0:activeBox===1?1:activeAvg);   // gli estremi li decide la finestra, senza aspettare la media
+    passShown=stickyPct(passShown,passBox===0?0:passBox===1?1:passAvg);
+    pctSlot=(pctSlot+1)%PCT_SLOTS;actSum[pctSlot]=0;actTime[pctSlot]=0;passHit[pctSlot]=0;passTot[pctSlot]=0;
     rateRelCount=0;rateReabCount=0;rateDeadCount=0;rateLostCount=0;rateSpikeCount=0;rateBurstCount=0;rateFireCount=0;rateMissCount=0;rateWindow=0;rateSim=0;}
 
   // Tendenza del serbatoio: media lenta (~2 s), valore mostrato aggiornato una volta al secondo, stato con isteresi
   if(sdt>0){const dv=(vesCount-lastVes)/sdt;if(Math.abs(dv)<60)vesTrend+=(dv-vesTrend)*Math.min(1,dt*0.5);}   // per secondo simulato, come sintesi (0,2/s) e rilascio
   lastVes=vesCount;
   let nAct=0;for(const n of postNeurons)if(n.active)nAct++;
-  if(postNeurons.length)activeAvg+=(nAct/postNeurons.length-activeAvg)*Math.min(1,dt*0.15);
+  if(postNeurons.length){actSum[pctSlot]+=nAct/postNeurons.length*dt;actTime[pctSlot]+=dt;}
   trendTimer+=dt;
-  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();activeShown=stickyPct(activeShown,activeAvg);passShown=stickyPct(passShown,passAvg);}
+  if(trendTimer>=1){trendTimer=0;trendShown=vesTrend;trendState=classifyTrend();}
 
   // Trasportatori DAT1: agganciano le particelle e le riportano dentro (il metilfenidato li rallenta e li fa fallire)
   for(const d of dat1s){
@@ -474,7 +495,8 @@ function setStimulus(v){stimulus=Math.max(0,Math.min(1,v));}
 function setSpeed(v){speedMul=Math.max(1,Math.min(8,v));}
 // "Sonno": azzera debito, serbatoio e fessura. La tolleranza dei D2 recupera solo un po': serve tempo senza scrolling
 function resetSim(){
-  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeAvg=0;activeShown=0;passAvg=0;passShown=0;
+  sleepDebt=0;vesCount=MAX_VES;lastVes=MAX_VES;vesTrend=0;trendShown=0;trendState='full';trendTimer=0;activeBox=0;passBox=0;activeAvg=0;activeShown=0;passAvg=0;passShown=0;
+  actSum.fill(0);actTime.fill(0);passHit.fill(0);passTot.fill(0);pctSlot=0;
   particles=[];stats={recycled:0,maob:0,comt:0,lost:0,total:0,binds:0,fires:0,misses:0};fireEma=0;missEma=0;lostEma=0;displayFireRate=0;displayLostRate=0;tonicAccum=0;burstAccum=0;spikeQ=[];spikeTimer=0;vesAccum=0;preGlow=0;preFlash=0;preHold=0;snapGlow=0;relEma=0;reabEma=0;deadEma=0;spikeEma=0;burstEma=0;displayRelRate=0;displayReabRate=0;displayDeadRate=0;displaySpikeRate=0;displayBurstRate=0;sleepToastTimer=3;
   scrollActive=false;scrollAccum=0;mphRebound=0;caffEndTimer=0;
   caffeineTimer=0;caffeineActive=false;mphTimer=0;mphActive=false;exerciseTimer=0;exerciseActive=false;   // dormire chiude anche questi effetti

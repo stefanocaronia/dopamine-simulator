@@ -17,8 +17,8 @@ function stimToast(){
   const v=Math.round(stimulus*100),q=passPct();
   // activeShown: % di tempo ricettivo (media lenta con isteresi); sotto il 5% ma non zero si scrive "&lt;5", così le accensioni rare non spariscono.
   // Uno zero si dice a parole: un "0%" secco non fa capire che cosa manca
-  const p=activeShown>0?String(activeShown):(activeAvg>0.003?'&lt;5':'0');
-  const act=activeShown===0&&activeAvg<=0.003?T('u.receptive.none'):q===0?T('u.receptive.nopass',{p}):T('u.receptive',{p,q});
+  const p=activeShown>0?String(activeShown):'&lt;5';
+  const act=activeBox<=0?T('u.receptive.none'):q===0?T('u.receptive.nopass',{p}):T('u.receptive',{p,q});
   const P={rel:displayRelRate,act,trend:trendText()};
   const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};

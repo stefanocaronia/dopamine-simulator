@@ -65,9 +65,14 @@ function drawCleft(){
   ctx.globalAlpha=1;
 }
 
+// Ondeggiamento della membrana: stessa formula per il contorno e per la zona attiva, così non si scollano
+const termWob=(t,th)=>Math.sin(th*4+t*.5)*TERM.ry*.02+Math.sin(th*7-t*.3)*TERM.ry*.012;
+// Estremi della faccia piatta (x = PRE.w): si muovono con l'ondeggiamento
+function termFace(t){const {cy,ry}=TERM;return {y0:cy-(ry+termWob(t,-Math.PI/2)),y1:cy+(ry+termWob(t,Math.PI/2))};}
+
 function terminalPath(t){
   const {cx,cy,rx,ry,thJ,axonR}=TERM;
-  const wob=th=>Math.sin(th*4+t*.5)*ry*.02+Math.sin(th*7-t*.3)*ry*.012;
+  const wob=th=>termWob(t,th);
   const N=40;
   ctx.beginPath();
   for(let i=0;i<=N;i++){const th=-Math.PI/2+(Math.PI/2-thJ)*(i/N),w=wob(th);
@@ -97,11 +102,12 @@ function drawTerminal(){
   for(const a of apPulses){const fade=a.x>xJ?Math.max(0,1-(a.x-xJ)/(PRE.w*.18)):1;
     ctx.strokeStyle=`rgba(255,226,122,${.55*fade})`;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x-22,a.y);ctx.lineTo(a.x,a.y);ctx.stroke();
     blit(sAP,a.x,a.y,fade);}
-  // Zona attiva (SNAP25) lungo la membrana
-  ctx.fillStyle='rgba(70,110,200,.5)';ctx.fillRect(PRE.w-4,SNAP.y,4,SNAP.h);
-  // Zona attiva: bagliore di fondo con lo stimolo e lampo verde a ogni fusione (snapGlow)
-  const sg=Math.min(1,(stimulus>.15?.15+stimulus*.35:0)+.6*snapGlow);
-  if(sg>.02){ctx.save();ctx.shadowColor=C.dopa;ctx.shadowBlur=10+stimulus*14+16*snapGlow;ctx.fillStyle=`rgba(0,255,136,${sg})`;ctx.fillRect(PRE.w-3,SNAP.y,2,SNAP.h);ctx.restore();}
+  // Zona attiva (SNAP25): è la faccia piatta della membrana, non una barra a sé. Prima c'era una striscia blu fissa
+  // accanto al bordo: due linee parallele per la stessa cosa, e la striscia restava ferma mentre la membrana ondeggiava.
+  // Qui resta solo il bagliore verde, che cresce con lo stimolo e lampeggia a ogni fusione (snapGlow), lungo il bordo
+  const face=termFace(t),sg=Math.min(1,(stimulus>.15?.15+stimulus*.35:0)+.6*snapGlow);
+  if(sg>.02){ctx.save();ctx.shadowColor=C.dopa;ctx.shadowBlur=10+stimulus*14+16*snapGlow;ctx.strokeStyle=`rgba(0,255,136,${sg})`;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(PRE.w-2,face.y0+2);ctx.lineTo(PRE.w-2,face.y1-2);ctx.stroke();ctx.restore();}
   if(H>=300){ctx.save();ctx.translate(PRE.w-15,cy);ctx.rotate(-Math.PI/2);ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(130,170,235,.85)';ctx.fillText(T('cv.snap'),0,0);ctx.restore();}
   // VMAT2 (riciclo nelle vescicole)
   const V=VMAT_Z;

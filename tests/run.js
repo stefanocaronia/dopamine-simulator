@@ -139,10 +139,20 @@ function pctChanges(sec){let a=G('activeShown'),q=G('passPct()'),ca=0,cq=0;
   for(let i=0;i<Math.round(sec/DT);i++){M.update(DT);const na=G('activeShown'),nq=G('passPct()');if(na!==a){ca++;a=na;}if(nq!==q){cq++;q=nq;}}
   return {rec:ca,pass:cq};}
 reset({stim:0.3});run(20);let ch=pctChanges(60);
-ok('receptive % changes at most 12 times a minute at 30%',ch.rec<=12,ch.rec+' changes');
-ok('passed % changes at most 12 times a minute at 30%',ch.pass<=12,ch.pass+' changes');
+ok('receptive % changes at most 10 times a minute at 30%',ch.rec<=10,ch.rec+' changes');
+ok('passed % changes at most 15 times a minute at 30%',ch.pass<=15,ch.pass+' changes');
 reset({mode:'adhd',stim:0.35});run(20);ch=pctChanges(60);
-ok('receptive % is steady in ADHD too',ch.rec<=12,ch.rec+' changes');
+ok('receptive % is steady in ADHD too',ch.rec<=10,ch.rec+' changes');
+// …but steady must not mean deaf: moving the slider has to show up in the text within a few seconds
+function secsUntil(cond,limit){for(let i=0;i<Math.round(limit/DT);i++){M.update(DT);if(cond())return (i+1)*DT;}return Infinity;}
+reset({stim:0.6});run(25);M.setStimulus(0);
+const tDown=secsUntil(()=>G('activeShown')<40,12);
+ok('dropping the stimulus to 0 moves the receptive % within 6 s',tDown<=6,fmt(tDown)+' s');
+const tNone=secsUntil(()=>G('activeBox')<=0,20);
+ok('and the toast reaches the "never receptive" wording within 12 s',tNone<=12,fmt(tNone)+' s');
+reset({stim:0});run(20);M.setStimulus(1);
+const tUp=secsUntil(()=>G('activeShown')>=80,12);
+ok('raising the stimulus to 100% moves the receptive % within 6 s',tUp<=6,fmt(tUp)+' s');
 // both are multiples of 5, or exactly 0 / 100
 reset({stim:0.5});run(40);s=S();
 ok('shown percentages are multiples of 5',G('activeShown')%5===0&&G('passPct()')%5===0,`${G('activeShown')}/${G('passPct()')}`);
