@@ -113,6 +113,7 @@ function setGeometry(w,h){
   SNAP={x:PRE.w-2,y:yTop,w:10,h:yBot-yTop};   // zona attiva: coincide con la faccia piatta della membrana
   TERM.thJ=Math.asin(TERM.axonR/TERM.ry);
   TERM.xJ=PRE.w-TERM.rx*Math.cos(TERM.thJ);
+  COMT_B={x0:CLEFT.x+10,x1:CLEFT.x+CLEFT.w-10,y0:14,y1:H-30};
   VMAT_Z={x:PRE.w*.46,y:H*.24,w:PRE.w*.27,h:H*.17};
   MAO_Z={x:PRE.w*.46,y:H*.59,w:PRE.w*.27,h:H*.17};
   rebuildAll();buildMotes();
@@ -153,7 +154,35 @@ function rebuildReceptors(){
 // COMT: eat = tempo residuo dell'animazione "inghiotte", eaten = molecole mangiate (numerino sotto l'enzima)
 function rebuildComts(){
   const n=MODES[mode].comtCount;comts=[];
-  for(let i=0;i<n;i++)comts.push({x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.8,chomp:Math.random()*6.28,eat:0,eaten:0});
+  for(let i=0;i<n;i++){const c={x:CLEFT.x+30+Math.random()*(CLEFT.w-60),y:30+Math.random()*(H-60),vx:0,vy:0,turn:0,chomp:Math.random()*6.28,eat:0,eaten:0};comtTurn(c,null);comts.push(c);}
+}
+
+// ───────────────────────── COMT: movimento alla Pac-Man ─────────────────────────
+// Gli enzimi vanno solo in orizzontale o in verticale, come Pac-Man. A ogni "bivio" (timer scaduto o muro davanti)
+// scelgono la direzione: puntano l'asse che accorcia di più la distanza dalla molecola libera più vicina, evitano di
+// tornare indietro e di infilarsi addosso a un altro enzima. La velocità è costante, così l'andatura resta leggibile.
+const COMT_SPEED=42,COMT_TURN=0.5,COMT_SEE=170,COMT_LOOK=26;
+const COMT_DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+let COMT_B={x0:0,x1:0,y0:0,y1:0};   // muri della fessura, ricalcolati da setGeometry
+function comtBlocked(c){
+  const nx=c.x+Math.sign(c.vx)*COMT_LOOK,ny=c.y+Math.sign(c.vy)*COMT_LOOK;
+  return nx<COMT_B.x0||nx>COMT_B.x1||ny<COMT_B.y0||ny>COMT_B.y1;
+}
+function comtTurn(c,prey){
+  let best=null,bestScore=-Infinity;
+  for(const [dx,dy] of COMT_DIRS){
+    const nx=c.x+dx*COMT_LOOK,ny=c.y+dy*COMT_LOOK;
+    if(nx<COMT_B.x0||nx>COMT_B.x1||ny<COMT_B.y0||ny>COMT_B.y1)continue;   // muro
+    let s=Math.random()*0.7;
+    if(dx*c.vx<0||dy*c.vy<0)s-=1.4;                                       // non tornare indietro
+    if(prey){const vx=prey.x-c.x,vy=prey.y-c.y,L=Math.max(1,Math.hypot(vx,vy));s+=2.4*(dx*vx+dy*vy)/L;}
+    for(const o of comts){if(o===c)continue;const ox=o.x-c.x,oy=o.y-c.y,L=Math.hypot(ox,oy);
+      if(L<70&&L>0)s-=1.2*(dx*ox+dy*oy)/L;}                               // stai lontano dagli altri enzimi
+    if(s>bestScore){bestScore=s;best=[dx,dy];}
+  }
+  if(!best)best=[-Math.sign(c.vx)||1,-Math.sign(c.vy)||0];                // vicolo cieco: torna indietro
+  c.vx=best[0]*COMT_SPEED;c.vy=best[1]*COMT_SPEED;
+  c.turn=COMT_TURN*(0.6+Math.random()*0.9);
 }
 
 function rebuildDat1(){
@@ -450,25 +479,18 @@ function update(dt){
 
   // COMT: probabilità di distruzione indipendente dal frame rate (equivale a comtRate × scala a 60 fps)
   const pKill=1-Math.pow(1-cfg.comtRate,sdt*60);
-  for(let ci=0;ci<comts.length;ci++){
-    const c=comts[ci];
-    for(let cj=0;cj<comts.length;cj++){
-      if(ci===cj)continue;const o=comts[cj];
-      const dx=c.x-o.x,dy=c.y-o.y,d=Math.max(1,Math.hypot(dx,dy));
-      if(d<60){c.vx+=dx/d*0.4*(60-d)/60;c.vy+=dy/d*0.4*(60-d)/60;}
-    }
+  for(const c of comts){
     let nearest=null,nearDist=Infinity;
     for(const p of particles){if(p.state!=='free')continue;const d=Math.hypot(p.x-c.x,p.y-c.y);if(d<nearDist){nearDist=d;nearest=p;}}
-    if(nearest&&nearDist<150){const dx=nearest.x-c.x,dy=nearest.y-c.y,dist=Math.max(1,Math.hypot(dx,dy));c.vx+=dx/dist*.25;c.vy+=dy/dist*.25;}   // insegue la molecola libera più vicina
-    c.vx+=(Math.random()-.5)*.4;c.vy+=(Math.random()-.5)*.4;
-    c.vx*=.90;c.vy*=.90;
-    c.x+=c.vx*sdt*40;c.y+=c.vy*sdt*40;
+    c.turn-=sdt;
+    if(c.turn<=0||comtBlocked(c))comtTurn(c,nearDist<COMT_SEE?nearest:null);
+    c.x+=c.vx*sdt;c.y+=c.vy*sdt;
     if(c.eat>0)c.eat-=dt;
     c.chomp+=dt*(c.eat>0?32:nearDist<45?18:5);   // mastica in fretta mentre inghiotte, un po' quando ha una preda vicina
-    if(c.x<CLEFT.x+10){c.x=CLEFT.x+10;c.vx=Math.abs(c.vx);}
-    if(c.x>CLEFT.x+CLEFT.w-10){c.x=CLEFT.x+CLEFT.w-10;c.vx=-Math.abs(c.vx);}
-    if(c.y<14){c.y=14;c.vy=Math.abs(c.vy);}
-    if(c.y>H-30){c.y=H-30;c.vy=-Math.abs(c.vy);}
+    if(c.x<COMT_B.x0){c.x=COMT_B.x0;c.vx=Math.abs(c.vx);}
+    if(c.x>COMT_B.x1){c.x=COMT_B.x1;c.vx=-Math.abs(c.vx);}
+    if(c.y<COMT_B.y0){c.y=COMT_B.y0;c.vy=Math.abs(c.vy);}
+    if(c.y>COMT_B.y1){c.y=COMT_B.y1;c.vy=-Math.abs(c.vy);}
     if(Math.random()<pKill){for(const p of particles){if(p.state!=='free')continue;if(Math.hypot(p.x-c.x,p.y-c.y)<18){p.state='comt_destroy';p.timer=0;p.eater=c;c.eat=0.45;c.eaten++;break;}}}
   }
 
