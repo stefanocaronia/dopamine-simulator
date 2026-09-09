@@ -284,14 +284,14 @@ function drawParticles(){
 
 // COMT: Pac-Man che si gonfia e mastica in fretta mentre inghiotte una molecola; sotto, quante ne ha mangiate
 function drawCOMT(){
-  const s=sprite(C.comt,1,13);
+  // Pac-Man vero: nessun occhio e bocca che si apre quasi a un quarto di giro (m = mezza apertura, in radianti)
+  const s=sprite(C.comt,1,15);
   for(const c of comts){const k=c.eat>0?c.eat/0.45:0,sc=1+.35*k;
     blit(s,c.x,c.y,.45+.45*k);ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.atan2(c.vy,c.vx));ctx.scale(sc,sc);
-    const m=.12+.55*(.5+.5*Math.sin(c.chomp));
-    ctx.beginPath();ctx.arc(0,0,7.5,m,6.283-m);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=C.comt;ctx.fill();
-    ctx.beginPath();ctx.arc(1.5,-3.2,1.5,0,6.283);ctx.fillStyle='#0a0a1a';ctx.fill();ctx.restore();
+    const m=.05+.8*(.5+.5*Math.sin(c.chomp));
+    ctx.beginPath();ctx.arc(0,0,9,m,6.283-m);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=C.comt;ctx.fill();ctx.restore();
     for(const p of particles)if(p.eater===c&&p.state==='comt_destroy')blit(sprite(C.dead,3.2,9),p.x,p.y,p.alpha);   // la preda, sopra la bocca
-    if(c.eaten){ctx.save();ctx.font='700 8.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=3;ctx.fillStyle='rgba(255,136,51,.9)';ctx.fillText('\u2715'+c.eaten,c.x,c.y+10);ctx.restore();}
+    if(c.eaten){ctx.save();ctx.font='700 8.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=3;ctx.fillStyle='rgba(255,136,51,.9)';ctx.fillText('\u2715'+c.eaten,c.x,c.y+12);ctx.restore();}
   }
 }
 
