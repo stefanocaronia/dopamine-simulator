@@ -2,11 +2,14 @@
 /* tests/plain.js — the simplified view must leave no acronym in any visible text, in any language.
    Loads the dictionaries and js/i18n.js on a stub DOM, switches simpleView on, runs T() over every key that can be
    shown in that view (hidden elements' tooltips, the biologists' page and the pieces marked adv are skipped) and looks
-   for DAT1, COMT, VMAT2, MAO, D2, SNAP25, A2A in the result. Run alone (node tests/plain.js) or through tests/run.js. */
+   for DAT1, COMT, VMAT2, MAO, D2, SNAP25, A2A in the result. The opposite rule is checked too: a piece marked adv must
+   carry an acronym, because plain-language sentences stay visible. Run alone (node tests/plain.js) or through tests/run.js. */
 const fs=require('fs'),path=require('path'),vm=require('vm');
-const ACR=/(?<![A-Za-z0-9])(DAT1|COMT|VMAT2|MAO|D2|SNAP25|A2A)(?![A-Za-z0-9])/;
+// THC and REM are everyday words and stay; GABA also as the Russian ГАМК
+const ACR=/(?<![A-Za-z0-9Ѐ-ӿ])(DAT1|COMT|VMAT2|MAO|D2|D1|SNAP25|A2A|CB1|GABA|ГАМК|DAT)(?![A-Za-z0-9Ѐ-ӿ])/;
 const HIDDEN=/^(bio\.|tip\.(comt|vmat2|maob|dead)\.|leg\.(comt|vmat2|maob)|w\.|simple\.|tip\.simple)/;
-const stripAdv=s=>s.replace(/<p class="adv">[\s\S]*?<\/p>/g,'').replace(/<div class="adv">[\s\S]*?<\/div>/g,'').replace(/<adv>[\s\S]*?<\/adv>/g,'');
+const ADV=/<p class="adv">([\s\S]*?)<\/p>|<div class="adv">([\s\S]*?)<\/div>|<adv>([\s\S]*?)<\/adv>/g;
+const stripAdv=s=>s.replace(ADV,'');
 function check(root){
   const el=()=>({style:{},dataset:{},classList:{toggle(){},add(){},remove(){}},setAttribute(){},querySelector:el,querySelectorAll(){return[];},innerHTML:'',textContent:''});
   const sb={console,document:{getElementById:el,querySelector:el,querySelectorAll(){return[];},documentElement:el(),body:el(),title:''},localStorage:{getItem(){return null;},setItem(){}},navigator:{language:'it'},location:{search:'',href:'http://x/'},history:{replaceState(){}},URL,URLSearchParams};
@@ -19,16 +22,18 @@ function check(root){
   const problems=[];let checked=0;
   for(const lang of Object.keys(G('I18N'))){
     G(`lang=${JSON.stringify(lang)}`);
-    for(const w of ['d2','dat1','snap25','a2a','vmat2','mao','comt'])if(G(`lookKey('w.${w}')`)==null)problems.push(`${lang}: missing plain word w.${w}`);
+    for(const w of ['d2','dat1','snap25','a2a','vmat2','mao','comt','cb1','dat'])if(G(`lookKey('w.${w}')`)==null)problems.push(`${lang}: missing plain word w.${w}`);
     for(const k of Object.keys(G('I18N')[lang])){
       if(HIDDEN.test(k)||k.includes('@'))continue;
+      const src=String(G('I18N')[lang][k]);
+      for(const m of src.matchAll(ADV)){const piece=(m[1]||m[2]||m[3]).replace(/<[^>]+>/g,' ');if(!ACR.test(piece))problems.push(`${lang}: piece hidden without an acronym in ${k}: "${piece.slice(0,40)}"`);}
       const out=stripAdv(G(`T(${JSON.stringify(k)})`));checked++;
       const m=out.replace(/<[^>]+>/g,'').match(ACR);
       if(m)problems.push(`${lang}: "${m[1]}" still visible in ${k}`);
       if(/<i class="c-[a-z0-9]+"><\/i>/.test(out))problems.push(`${lang}: empty coloured span left in ${k}`);
       if(/[(（]\s*[)）]/.test(out))problems.push(`${lang}: empty parentheses left in ${k}`);
       if(/<(?:b|i)(?: class="[^"]*")?>\s/.test(out))problems.push(`${lang}: space right inside an inline tag in ${k}`);
-      const dup=out.replace(/<[^>]+>/g,'').match(/(?<![\p{L}])(\p{L}{4,})\s+\1(?![\p{L}])/iu);   // "receptors receptors": name kept next to a replaced acronym
+      const dup=out.replace(/<[^>]+>/g,'').match(/(?<![\p{L}])(\p{L}{4,})(?:\s+\1|\s*[(（]\1[)）])(?![\p{L}])/iu);   // "receptors receptors", "adenosina (adenosina)": name kept next to a replaced acronym
       if(dup)problems.push(`${lang}: repeated word "${dup[1]}" in ${k}`);
     }
   }
