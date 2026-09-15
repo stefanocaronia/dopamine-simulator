@@ -181,5 +181,10 @@ section('G. dictionaries');
 const i18n=require('./i18n.js').check(root);
 ok(`i18n: ${i18n.langs.length} languages with the same keys, placeholders, tags and classes as it (${i18n.keys} keys)`,i18n.problems.length===0,i18n.problems.slice(0,5).join('; '));
 
+// ── H. drawing code ──
+section('H. drawing');
+const rs=require('./render.js').check(root);
+ok(`render smoke test: ${rs.scenes||0} scenes (both views, large and tiny canvas, every hover key) draw without throwing`,rs.problems.length===0,rs.problems.slice(0,3).join('; '));
+
 console.log(`\n${checks-fails}/${checks} checks passed (seed ${seed}${verbose?'':', --verbose for every measurement'})`);
 process.exit(fails?1:0);

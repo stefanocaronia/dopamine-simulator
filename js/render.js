@@ -110,12 +110,11 @@ function drawTerminal(){
     ctx.beginPath();ctx.moveTo(PRE.w-2,face.y0+2);ctx.lineTo(PRE.w-2,face.y1-2);ctx.stroke();ctx.restore();}
   if(H>=300){ctx.save();ctx.translate(PRE.w-15,cy);ctx.rotate(-Math.PI/2);ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(130,170,235,.85)';ctx.fillText(T('cv.snap'),0,0);ctx.restore();}
   // VMAT2 (riciclo nelle vescicole) e MAO: nella vista essenziale non si disegnano (il modello li usa lo stesso)
-  const V=VMAT_Z;
+  const V=VMAT_Z,M=MAO_Z,mr=M.h/2;   // M serve anche alle etichette più sotto: va dichiarato fuori dal blocco
   if(!simpleView){ctx.save();ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*12;
   ctx.fillStyle='rgba(51,136,221,.10)';roundRect(V.x,V.y,V.w,V.h,12);ctx.fill();
   ctx.strokeStyle='rgba(51,136,221,.6)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
   // MAO-B su un mitocondrio (distrugge)
-  const M=MAO_Z,mr=M.h/2;
   ctx.fillStyle='rgba(255,51,85,.10)';roundRect(M.x,M.y,M.w,M.h,mr);ctx.fill();
   ctx.strokeStyle='rgba(255,51,85,.6)';ctx.lineWidth=1.5;ctx.stroke();
   ctx.save();roundRect(M.x+3,M.y+3,M.w-6,M.h-6,mr-3);ctx.clip();
