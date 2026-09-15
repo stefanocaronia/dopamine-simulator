@@ -13,7 +13,7 @@ An interactive, educational simulation of a dopamine synapse. Watch dopamine get
 - Watch the neurons fire: a tonic pacemaker and phasic bursts travel down the axon, light up the terminal and release dopamine in packets; the receiving neurons fire only when a cortical input arrives while dopamine has made them receptive
 - Read what is happening: live state cards under the canvas and a tooltip on every element
 - Two more pages: **How it works** (short sections, infographics, glossary) and **Model vs reality** (what is simplified and why)
-- Essential view (◐ in the header, or `?simple=1` in a shared link): the same model with less on screen, for a first look
+- Simplified view (◐ in the header, or `?simple=1` in a shared link): the same model without acronyms, for someone who knows no chemistry
 - Kids mode (🧒 in the header, or `?kid=1` in a shared link): no substances, kid-friendly examples, age starting at 12
 - Eleven languages, remembered settings, no account, no tracking
 

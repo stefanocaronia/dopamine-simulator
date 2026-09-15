@@ -225,12 +225,12 @@ function saveSettings(){
 // Cambia anche l'URL (?kid=1) così il link si può condividere e si apre già in questa modalità.
 const KID_AGE=12,KID_HIDE=new Set(['mech.7']);
 // Vista essenziale: cambia solo cosa si vede (canvas, controlli, pezzi avanzati dei testi); il modello gira identico
-const SIMPLE_HIDE=new Set(['mech.7']);
+const SIMPLE_HIDE=new Set([]);   // niente sezioni nascoste: le abitudini restano, cambiano solo le parole
 function setSimpleView(on){
   simpleView=!!on;
   try{localStorage.setItem('dopa.simple',simpleView?'1':'0');}catch(e){}
   try{const u=new URL(location.href);if(simpleView)u.searchParams.set('simple','1');else u.searchParams.delete('simple');history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
-  if(simpleView){for(const k in subst){subst[k].t=0;subst[k].after=0;}if(page==='bio')showPage('sim');}   // niente sostanze attive; la pagina avanzata si chiude
+  if(simpleView&&page==='bio')showPage('sim');   // la pagina per biologi si chiude
   hover=null;applyI18n();updateHUD();
 }
 function setKidMode(on){

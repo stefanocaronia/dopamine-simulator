@@ -21,18 +21,42 @@ const LOCALE=Object.fromEntries(LANG_META.map(l=>[l.code,l.locale]));
 let lang='it';
 // Modalità ragazzi: i testi possono avere una variante <chiave>@kid (niente sostanze, esempi adatti); la attiva ui.js
 let kidMode=false;
-// Vista essenziale: stesso modello, meno cose sullo schermo (niente COMT, VMAT2, MAO, scie, sostanze, età) e i pezzi
-// avanzati dei testi nascosti: sono marcati con class="adv" o con il tag <adv>, e body.simple li spegne via CSS
+// Vista semplificata: stesso modello, per chi non sa di chimica. Sullo schermo spariscono COMT, VMAT2, MAO e le scie;
+// i pezzi avanzati dei testi (class="adv" o tag <adv>) vengono spenti via CSS da body.simple; e le sigle che restano
+// diventano parole semplici (plainify), con le etichette che devono cambiare del tutto nella variante @simple
 let simpleView=false;
+// Sigle -> parole semplici. Regola generica guidata dalle chiavi w.* di ogni dizionario: se accanto alla sigla c'è già
+// il nome comune (prima, o dopo nelle lingue CJK) la sigla si toglie e basta, altrimenti diventa la parola semplice
+const ACRONYMS=['SNAP25','VMAT2','DAT1','COMT','MAO','A2A','D2'];
+function plainify(s){
+  const cjk=lang==='zh'||lang==='ja'||lang==='ko';
+  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  for(const A of ACRONYMS){
+    const word=lookKey('w.'+A.toLowerCase());if(word==null)continue;
+    const last=word.trim().split(/\s+/).pop().replace(/^ال/,'');   // radice: ultima parola del nome comune (\"zona di rilascio\" -> \"rilas\"), senza l'articolo arabo
+    const stem=(cjk?word:last.slice(0,5)).toLowerCase();
+    s=s.replace(new RegExp('(?<![A-Za-z0-9])'+A+'(?:-[AB])?(?![A-Za-z0-9])','g'),(m,off,str)=>{
+      const rawBefore=str.slice(Math.max(0,off-40),off).replace(/<[^>]+>/g,'').toLowerCase();
+      const before=rawBefore.replace(/[\s(,:;·–-]+$/,'');
+      const after=str.slice(off+m.length,off+m.length+24).replace(/<[^>]+>/g,'').replace(/^[\s)]+/,'').toLowerCase();
+      const paren=/[(（·–]\s*$/.test(rawBefore);   // sigla tra parentesi (anche a tutta larghezza) o dopo un punto mediano: nome subito prima
+      const named=cjk?(after.slice(0,8).includes(stem)||before.slice(-8).includes(stem)):(new RegExp(esc(stem)+'[^\\s]*$').test(before)||(paren&&before.slice(-25).includes(stem)));   // CJK: il nome può stare prima o dopo, con una particella in mezzo
+      return named?'\u0000':word;
+    });
+  }
+  return s.replace(cjk?/\s*(?:·\s*)?\u0000\s*/g:/\s*(?:·\s*)?\u0000/g,'').replace(cjk?/\s*<i class="c-[a-z0-9]+"><\/i>\s*/g:/\s*<i class="c-[a-z0-9]+"><\/i>/g,'').replace(/[(（]\s*[)）]/g,'').replace(/ {2,}/g,' ').replace(/ ([,.;:!?)])/g,'$1');
+}
 function langMeta(code){return LANG_META.find(l=>l.code===code)||LANG_META[0];}
 
+function lookKey(k){const d=I18N[lang]||{},en=I18N.en||{},it=I18N.it||{};return d[k]!=null?d[k]:en[k]!=null?en[k]:it[k]!=null?it[k]:null;}
 function T(key,params){
-  const d=I18N[lang]||{},en=I18N.en||{},it=I18N.it||{};
-  const look=k=>d[k]!=null?d[k]:en[k]!=null?en[k]:it[k]!=null?it[k]:null;
-  let s=kidMode?look(key+'@kid'):null;   // in modalità ragazzi vince la variante @kid, se esiste
+  const look=lookKey;
+  let s=simpleView?look(key+'@simple'):null;   // nella vista semplificata vince la variante @simple (etichette), se esiste
+  if(s==null&&kidMode)s=look(key+'@kid');      // in modalità ragazzi vince la variante @kid, se esiste
   if(s==null)s=look(key);
   if(s==null)s=key;
   if(params)for(const k in params)s=s.split('{'+k+'}').join(params[k]);
+  if(simpleView)s=plainify(s);
   return s;
 }
 // ?kid=1 nell'URL vince (link condivisibile), altrimenti l'ultima scelta salvata

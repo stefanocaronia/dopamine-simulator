@@ -35,8 +35,8 @@ FIG.journey=function(){
   // vescicole e sintesi
   const ves=[[176,86],[196,74],[216,90],[186,110],[210,116],[232,104],[196,138],[222,140],[238,124]];
   for(const [x,y] of ves)b+=_dot(x,y,C.dopa,3);
-  b+='<rect x="34" y="70" width="98" height="34" rx="10" fill="rgba(51,136,221,.12)" stroke="'+C.vmat+'" stroke-width="1.5" stroke-dasharray="5 4"/>'+_txt(83,92,'♻ VMAT2',{c:'#7ab8ff',s:11,w:800});
-  b+='<rect x="34" y="120" width="98" height="34" rx="17" fill="rgba(255,51,85,.12)" stroke="'+C.dead+'" stroke-width="1.5"/>'+_txt(83,142,'✕ MAO',{c:'#ff6b85',s:11,w:800});
+  b+='<rect x="34" y="70" width="98" height="34" rx="10" fill="rgba(51,136,221,.12)" stroke="'+C.vmat+'" stroke-width="1.5" stroke-dasharray="5 4"/>'+_txt(83,92,'♻ '+T('cv.vmat2'),{c:'#7ab8ff',s:11,w:800});
+  b+='<rect x="34" y="120" width="98" height="34" rx="17" fill="rgba(255,51,85,.12)" stroke="'+C.dead+'" stroke-width="1.5"/>'+_txt(83,142,'✕ '+T('cv.maob'),{c:'#ff6b85',s:11,w:800});
   b+='<path d="M136 87L166 87" stroke="'+C.vmat+'" stroke-width="2" marker-end="url(#fb)"/>';
   b+='<defs><marker id="fb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7ab8ff"/></marker><marker id="fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="'+C.dopa+'"/></marker><marker id="fp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#c98cff"/></marker></defs>';
   // rilascio e diffusione

@@ -320,7 +320,7 @@ function drawLabels(){
   ctx.fillStyle='#55708f';ctx.fillText(T('cv.cleft'),CLEFT.x+CLEFT.w/2,H-9,CLEFT.w-16);
   ctx.fillStyle='#6b85a3';ctx.fillText(T('cv.post'),CLEFT.x+CLEFT.w+(W-CLEFT.x-CLEFT.w)/2,H-9,W-CLEFT.x-CLEFT.w-16);
   ctx.font='700 10px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='left';ctx.fillStyle='rgba(190,120,255,.85)';ctx.fillText('DAT1',PRE.w+12,16);
+  ctx.textAlign='left';ctx.fillStyle='rgba(190,120,255,.85)';ctx.fillText(T('cv.dat1'),PRE.w+12,16);
   if(!simpleView){ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);}
   ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText(T('cv.d2',{n:effectiveD2()}),CLEFT.x+CLEFT.w-8,16);
   ctx.textAlign='left';ctx.font='600 9.5px "Segoe UI",system-ui,sans-serif';ctx.fillStyle='rgba(130,170,235,.7)';ctx.fillText(T('cv.axon'),6,TERM.cy-TERM.axonR-6);
