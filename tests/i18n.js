@@ -24,7 +24,11 @@ function check(root){
       if(classes(it[k])!==classes(d[k]))problems.push(`${l}: classes differ in ${k}`);
     }
   }
-  return {langs:Object.keys(I),keys:Object.keys(it).length,problems};
+  // advanced markers (hidden by the essential view): <adv>…</adv> must be balanced, and the source must carry some
+  for(const l of Object.keys(I))for(const k of Object.keys(I[l])){const v=String(I[l][k]);const o=(v.match(/<adv>/g)||[]).length,c=(v.match(/<\/adv>/g)||[]).length;if(o!==c)problems.push(`${l}: unbalanced <adv> in ${k}`);}
+  const advIt=Object.values(it).reduce((n,v)=>n+(String(v).match(/class="adv"|<adv>/g)||[]).length,0);
+  if(advIt<15)problems.push(`it: only ${advIt} advanced markers, expected at least 15`);
+  return {langs:Object.keys(I),keys:Object.keys(it).length,problems,advIt};
 }
 module.exports={check};
 if(require.main===module){

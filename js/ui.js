@@ -88,6 +88,7 @@ const TIPS={
   d2bar:()=>({t:T('tip.d2bar.t'),c:C.d2,b:T('tip.d2bar.b',{rec:effectiveD2(),full:baseD2(),ref:D2_REF,max:D2_MAX})}),
   age:()=>({t:T('tip.age.t'),c:C.active,b:T('tip.age.b',{age,full:baseD2()})}),
   kid:()=>({t:T('tip.kid.t'),c:'#7fffc8',b:T('tip.kid.b')}),
+  simple:()=>({t:T('tip.simple.t'),c:'#9ecbff',b:T('tip.simple.b')}),
   nic:()=>({t:T('tip.nic.t'),c:C.nic,b:T('tip.nic.b')}),
   can:()=>({t:T('tip.can.t'),c:C.can,b:T('tip.can.b')}),
   alc:()=>({t:T('tip.alc.t'),c:C.alc,b:T('tip.alc.b')}),
@@ -140,12 +141,12 @@ function hideTip(){tip.classList.remove('show');}
 
 function hitTest(mx,my){
   for(const d of dat1s)if(Math.hypot(mx-d.x,my-d.y)<14)return {key:'dat1',x:d.x,y:d.y,r:12};
-  for(const c of comts)if(Math.hypot(mx-c.x,my-c.y)<14)return {key:'comt',x:c.x,y:c.y,r:11};
+  if(!simpleView)for(const c of comts)if(Math.hypot(mx-c.x,my-c.y)<14)return {key:'comt',x:c.x,y:c.y,r:11};
   for(const r of receptors)if(Math.hypot(mx-r.x-2,my-r.y)<9)return {key:'d2',x:r.x+2,y:r.y,r:8};
   for(let i=0;i<postNeurons.length;i++){const g=postGeom(i);if(Math.hypot(mx-g.gx,my-g.ncy)<g.R+8)return {key:'gauge',x:g.gx,y:g.ncy,r:g.R+4,ni:i};}
   const inR=R=>mx>R.x&&mx<R.x+R.w&&my>R.y&&my<R.y+R.h;
-  if(inR(VMAT_Z))return {key:'vmat2',rect:VMAT_Z};
-  if(inR(MAO_Z))return {key:'maob',rect:MAO_Z};
+  if(!simpleView){if(inR(VMAT_Z))return {key:'vmat2',rect:VMAT_Z};
+  if(inR(MAO_Z))return {key:'maob',rect:MAO_Z};}
   if(mx>PRE.w-9&&mx<PRE.w+3&&my>SNAP.y&&my<SNAP.y+SNAP.h)return {key:'snap',rect:{x:PRE.w-6,y:SNAP.y,w:6,h:SNAP.h}};
   if(my>H-44&&my<H-18&&mx>CLEFT.x+CLEFT.w*.1&&mx<CLEFT.x+CLEFT.w*.9)return {key:'rates',rect:{x:CLEFT.x+CLEFT.w*.1,y:H-42,w:CLEFT.w*.8,h:24}};
   for(const v of vesicles)if(Math.hypot(mx-v.x,my-v.y)<7)return {key:'vesicles',x:v.x,y:v.y,r:6};
@@ -223,6 +224,15 @@ function saveSettings(){
 // Nasconde le sostanze (CSS su body.kid), usa i testi @kid, toglie la sezione "Le sostanze" e fa partire l'età da 12 anni.
 // Cambia anche l'URL (?kid=1) così il link si può condividere e si apre già in questa modalità.
 const KID_AGE=12,KID_HIDE=new Set(['mech.7']);
+// Vista essenziale: cambia solo cosa si vede (canvas, controlli, pezzi avanzati dei testi); il modello gira identico
+const SIMPLE_HIDE=new Set(['mech.7']);
+function setSimpleView(on){
+  simpleView=!!on;
+  try{localStorage.setItem('dopa.simple',simpleView?'1':'0');}catch(e){}
+  try{const u=new URL(location.href);if(simpleView)u.searchParams.set('simple','1');else u.searchParams.delete('simple');history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
+  if(simpleView){for(const k in subst){subst[k].t=0;subst[k].after=0;}if(page==='bio')showPage('sim');}   // niente sostanze attive; la pagina avanzata si chiude
+  hover=null;applyI18n();updateHUD();
+}
 function setKidMode(on){
   kidMode=!!on;
   try{localStorage.setItem('dopa.kid',kidMode?'1':'0');}catch(e){}
@@ -241,7 +251,7 @@ function renderDocs(){
   for(const [id,pre] of [['page-mech','mech'],['page-bio','bio']]){
     const el=$(id);if(!el)continue;
     let html='<p class="lead">'+T(pre+'.lead')+'</p>';
-    for(let i=1;i<40;i++){const k=pre+'.'+i+'.t';if(I18N.it[k]==null)break;if(kidMode&&KID_HIDE.has(pre+'.'+i))continue;html+='<section><h2>'+T(k)+'</h2>'+T(pre+'.'+i+'.b')+'</section>';}
+    for(let i=1;i<40;i++){const k=pre+'.'+i+'.t';if(I18N.it[k]==null)break;if((kidMode&&KID_HIDE.has(pre+'.'+i))||(simpleView&&SIMPLE_HIDE.has(pre+'.'+i)))continue;html+='<section><h2>'+T(k)+'</h2>'+T(pre+'.'+i+'.b')+'</section>';}
     el.innerHTML=withFigures(html);
   }
 }
@@ -288,6 +298,7 @@ function initUI(){
   ageEl.addEventListener('input',e=>{setAge(+e.target.value);$('age-val').textContent=e.target.value;syncRange(ageEl,+e.target.value,5,100);saveSettings();});
   $('btn-exercise').addEventListener('click',startExercise);
   $('kid-btn').addEventListener('click',()=>setKidMode(!kidMode));
+  $('simple-btn').addEventListener('click',()=>setSimpleView(!simpleView));
   initPages();
   // Selettore lingua a tendina
   buildLangMenu();

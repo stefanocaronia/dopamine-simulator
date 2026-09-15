@@ -21,6 +21,9 @@ const LOCALE=Object.fromEntries(LANG_META.map(l=>[l.code,l.locale]));
 let lang='it';
 // Modalità ragazzi: i testi possono avere una variante <chiave>@kid (niente sostanze, esempi adatti); la attiva ui.js
 let kidMode=false;
+// Vista essenziale: stesso modello, meno cose sullo schermo (niente COMT, VMAT2, MAO, scie, sostanze, età) e i pezzi
+// avanzati dei testi nascosti: sono marcati con class="adv" o con il tag <adv>, e body.simple li spegne via CSS
+let simpleView=false;
 function langMeta(code){return LANG_META.find(l=>l.code===code)||LANG_META[0];}
 
 function T(key,params){
@@ -38,6 +41,12 @@ function detectKid(){
   try{q=new URLSearchParams(location.search).get('kid');}catch(e){}
   try{saved=localStorage.getItem('dopa.kid');}catch(e){}
   kidMode=q!=null?(q==='1'||q==='true'):saved==='1';
+}
+function detectSimple(){
+  let q=null,saved=null;
+  try{q=new URLSearchParams(location.search).get('simple');}catch(e){}
+  try{saved=localStorage.getItem('dopa.simple');}catch(e){}
+  simpleView=q!=null?(q==='1'||q==='true'):saved==='1';
 }
 function fmtN(x,d){return Number(x).toLocaleString(LOCALE[lang]||'en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
 function fmt1(x){return fmtN(x,1);}
@@ -65,6 +74,8 @@ function applyI18n(){
   document.querySelectorAll('#lang-menu li').forEach(li=>{const on=li.dataset.lang===lang;li.classList.toggle('is-on',on);li.setAttribute('aria-selected',String(on));});
   document.body.classList.toggle('kid',kidMode);
   const kb=$('kid-btn');if(kb)kb.setAttribute('aria-pressed',String(kidMode));
+  document.body.classList.toggle('simple',simpleView);
+  const sb=$('simple-btn');if(sb)sb.setAttribute('aria-pressed',String(simpleView));
   if(typeof renderDocs==='function')renderDocs();   // pagine di testo (ui.js)
 }
 function setLang(l){

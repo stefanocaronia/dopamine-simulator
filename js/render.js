@@ -52,7 +52,7 @@ function render(){
   const bg=ctx.createRadialGradient(W*.32,H*.5,0,W*.32,H*.5,W*.75);
   bg.addColorStop(0,'#0c1219');bg.addColorStop(1,'#05070e');
   ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  drawCleft();drawTerminal();drawPostCells();drawDAT1();drawTrails();drawParticles();drawCOMT();drawFX();drawHover();drawLabels();
+  drawCleft();drawTerminal();drawPostCells();drawDAT1();if(!simpleView){drawTrails();}drawParticles();if(!simpleView)drawCOMT();drawFX();drawHover();drawLabels();
 }
 
 function drawCleft(){
@@ -109,9 +109,9 @@ function drawTerminal(){
   if(sg>.02){ctx.save();ctx.shadowColor=C.dopa;ctx.shadowBlur=10+stimulus*14+16*snapGlow;ctx.strokeStyle=`rgba(0,255,136,${sg})`;ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(PRE.w-2,face.y0+2);ctx.lineTo(PRE.w-2,face.y1-2);ctx.stroke();ctx.restore();}
   if(H>=300){ctx.save();ctx.translate(PRE.w-15,cy);ctx.rotate(-Math.PI/2);ctx.font='700 9.5px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(130,170,235,.85)';ctx.fillText(T('cv.snap'),0,0);ctx.restore();}
-  // VMAT2 (riciclo nelle vescicole)
+  // VMAT2 (riciclo nelle vescicole) e MAO: nella vista essenziale non si disegnano (il modello li usa lo stesso)
   const V=VMAT_Z;
-  ctx.save();ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*12;
+  if(!simpleView){ctx.save();ctx.setLineDash([5,4]);ctx.lineDashOffset=-t*12;
   ctx.fillStyle='rgba(51,136,221,.10)';roundRect(V.x,V.y,V.w,V.h,12);ctx.fill();
   ctx.strokeStyle='rgba(51,136,221,.6)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
   // MAO-B su un mitocondrio (distrugge)
@@ -123,7 +123,7 @@ function drawTerminal(){
   for(let i=1;i<=4;i++){const x=M.x+M.w*i/5;ctx.beginPath();
     for(let j=0;j<=6;j++){const yy=M.y+M.h*j/6,xx=x+Math.sin(j*1.7+i+t*.6)*4;j===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);}
     ctx.stroke();}
-  ctx.restore();
+  ctx.restore();}
   // Esercizio: il terminale si tinge leggermente di verde (sintesi accelerata)
   if(exerciseActive){terminalPath(t);ctx.fillStyle='rgba(60,179,113,'+(0.06+0.04*Math.sin(t*3))+')';ctx.fill();}
   // Vescicole
@@ -137,7 +137,7 @@ function drawTerminal(){
   // Etichette delle zone: sopra le vescicole, così restano leggibili anche su schermi piccoli.
   // Con abbastanza spazio, icona grande (♻ / ✕) sopra il nome e il verbo sotto.
   const verb=s=>s.replace(/^\S+\s+/,'');
-  if(V.h>=64){
+  if(simpleView){}else if(V.h>=64){
     label('♻',V.x+V.w/2,V.y+V.h/2-16,'800 20px','#7ab8ff',C.vmat);
     label(T('cv.vmat2'),V.x+V.w/2,V.y+V.h/2+4,'800 11px','#7ab8ff',C.vmat,V.w+14);
     label(verb(T('cv.vmat2sub')),V.x+V.w/2,V.y+V.h/2+17,'600 9.5px','rgba(122,184,255,.8)',null,V.w+14);
@@ -322,7 +322,7 @@ function drawLabels(){
   ctx.fillStyle='#6b85a3';ctx.fillText(T('cv.post'),CLEFT.x+CLEFT.w+(W-CLEFT.x-CLEFT.w)/2,H-9,W-CLEFT.x-CLEFT.w-16);
   ctx.font='700 10px "Segoe UI",system-ui,sans-serif';
   ctx.textAlign='left';ctx.fillStyle='rgba(190,120,255,.85)';ctx.fillText('DAT1',PRE.w+12,16);
-  ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);
+  if(!simpleView){ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);}
   ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText(T('cv.d2',{n:effectiveD2()}),CLEFT.x+CLEFT.w-8,16);
   ctx.textAlign='left';ctx.font='600 9.5px "Segoe UI",system-ui,sans-serif';ctx.fillStyle='rgba(130,170,235,.7)';ctx.fillText(T('cv.axon'),6,TERM.cy-TERM.axonR-6);
   if(H>=300){ctx.save();ctx.translate(W-9,H*.5);ctx.rotate(-Math.PI/2);ctx.font='700 9px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,226,122,.7)';ctx.fillText(T('cv.cortex'),0,0);ctx.restore();}
