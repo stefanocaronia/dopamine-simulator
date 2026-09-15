@@ -30,21 +30,35 @@ let simpleView=false;
 const ACRONYMS=['SNAP25','VMAT2','DAT1','COMT','MAO','A2A','D2'];
 function plainify(s){
   const cjk=lang==='zh'||lang==='ja'||lang==='ko';
-  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const art=w=>w.replace(/^ال/,'');   // via l'articolo arabo prima di confrontare
+  const bare=w=>w.replace(/^[وفبكل]?(?:ال)?/,'');   // …e anche una proclitica araba (و ف ب ك ل): "وناقلات" -> "ناقلات\"
   for(const A of ACRONYMS){
     const word=lookKey('w.'+A.toLowerCase());if(word==null)continue;
-    const last=word.trim().split(/\s+/).pop().replace(/^ال/,'');   // radice: ultima parola del nome comune (\"zona di rilascio\" -> \"rilas\"), senza l'articolo arabo
-    const stem=(cjk?word:last.slice(0,5)).toLowerCase();
+    // radici con cui riconoscere il nome comune già scritto accanto: ogni parola del nome (>= 4 lettere) troncata a 5;
+    // nelle lingue CJK la parola intera
+    let stems=cjk?[word]:word.split(/[\s-]+/).map(art).filter(w=>w.length>=4).map(w=>w.slice(0,5).toLowerCase());
+    if(!stems.length)stems=[art(word).slice(0,5).toLowerCase()];
+    const has=w=>stems.some(st=>art(w).startsWith(st)||bare(w).startsWith(st));
     s=s.replace(new RegExp('(?<![A-Za-z0-9])'+A+'(?:-[AB])?(?![A-Za-z0-9])','g'),(m,off,str)=>{
       const rawBefore=str.slice(Math.max(0,off-40),off).replace(/<[^>]+>/g,'').toLowerCase();
       const before=rawBefore.replace(/[\s(,:;·–-]+$/,'');
-      const after=str.slice(off+m.length,off+m.length+24).replace(/<[^>]+>/g,'').replace(/^[\s)]+/,'').toLowerCase();
-      const paren=/[(（·–]\s*$/.test(rawBefore);   // sigla tra parentesi (anche a tutta larghezza) o dopo un punto mediano: nome subito prima
-      const named=cjk?(after.slice(0,8).includes(stem)||before.slice(-8).includes(stem)):(new RegExp(esc(stem)+'[^\\s]*$').test(before)||(paren&&before.slice(-25).includes(stem)));   // CJK: il nome può stare prima o dopo, con una particella in mezzo
+      const after=str.slice(off+m.length,off+m.length+24).replace(/<[^>]+>/g,'').replace(/^[\s)·–-]+/,'').toLowerCase();
+      let named;
+      if(cjk)named=stems.some(st=>after.slice(0,8).includes(st)||before.slice(-8).includes(st));   // il nome può stare prima o dopo, con una particella in mezzo
+      else{
+        const prev=before.split(/[\s'’]+/).slice(-2);                     // le due parole prima: "zona attiva SNAP25", "recettori D2"
+        const paren=/[(（·–]\s*$/.test(rawBefore);                       // sigla tra parentesi o dopo un punto mediano: nome poco prima
+        named=prev.some(has)||(paren&&before.slice(-25).split(/[\s'’(]+/).some(has))||after.split(/[\s-]+/).slice(0,2).some(has);   // …o nelle due parole dopo: "D2 receptors", "SNAP25 active zone\"
+      }
       return named?'\u0000':word;
     });
   }
-  return s.replace(cjk?/\s*(?:·\s*)?\u0000\s*/g:/\s*(?:·\s*)?\u0000/g,'').replace(cjk?/\s*<i class="c-[a-z0-9]+"><\/i>\s*/g:/\s*<i class="c-[a-z0-9]+"><\/i>/g,'').replace(/[(（]\s*[)）]/g,'').replace(/ {2,}/g,' ').replace(/ ([,.;:!?)])/g,'$1');
+  // Pulizia: sigla incollata col trattino al nome che segue ("DAT1-Transporter", anche con il tag di chiusura in mezzo): via
+  // il trattino ma resta lo spazio prima; poi il marcatore con lo spazio (o il punto mediano) che lo precede; uno span
+  // rimasto vuoto sparisce, con lo spazio prima se non è incollato a una parola; niente spazio subito dentro un tag
+  return s.replace(/\u0000(<\/(?:b|i)>)?-(?=\S)/g,'$1').replace(cjk?/\s*(?:·\s*)?\u0000\s*/g:/\s*(?:·\s*)?\u0000/g,'')
+    .replace(/<(b|i)(?: class="[^"]*")?><\/\1>(?=\p{L})/gu,'').replace(cjk?/\s*<(b|i)(?: class="[^"]*")?><\/\1>\s*/g:/\s*<(b|i)(?: class="[^"]*")?><\/\1>/g,'')
+    .replace(/(<(?:b|i)(?: class="[^"]*")?>)\s+/g,'$1').replace(/[(（]\s*[)）]/g,'').replace(/ {2,}/g,' ').replace(/ ([,.;:!?)])/g,'$1');
 }
 function langMeta(code){return LANG_META.find(l=>l.code===code)||LANG_META[0];}
 

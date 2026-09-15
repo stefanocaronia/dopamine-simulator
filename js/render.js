@@ -319,10 +319,19 @@ function drawLabels(){
   ctx.fillStyle='#6b85a3';ctx.fillText(T('cv.terminal'),PRE.w*.5,H-9,PRE.w-16);
   ctx.fillStyle='#55708f';ctx.fillText(T('cv.cleft'),CLEFT.x+CLEFT.w/2,H-9,CLEFT.w-16);
   ctx.fillStyle='#6b85a3';ctx.fillText(T('cv.post'),CLEFT.x+CLEFT.w+(W-CLEFT.x-CLEFT.w)/2,H-9,W-CLEFT.x-CLEFT.w-16);
-  ctx.font='700 10px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='left';ctx.fillStyle='rgba(190,120,255,.85)';ctx.fillText(T('cv.dat1'),PRE.w+12,16);
-  if(!simpleView){ctx.textAlign='center';ctx.fillStyle='rgba(255,136,51,.85)';ctx.fillText('COMT',CLEFT.x+CLEFT.w/2,16);}
-  ctx.textAlign='right';ctx.fillStyle='rgba(255,204,0,.85)';ctx.fillText(T('cv.d2',{n:effectiveD2()}),CLEFT.x+CLEFT.w-8,16);
+  // Etichette in testa alla fessura: forma lunga ("RICAPTAZIONE · DAT1") finché ci sta, poi carattere più piccolo,
+  // e come ultima risorsa le sole sigle (mai nella vista semplificata, che non ne ha)
+  const n=effectiveD2(),items=[{t:T('cv.dat1'),s:'DAT1',x:PRE.w+12,al:'left',c:'rgba(190,120,255,.85)'}];
+  if(!simpleView)items.push({t:T('cv.comt'),s:'COMT',x:CLEFT.x+CLEFT.w/2,al:'center',c:'rgba(255,136,51,.85)'});
+  items.push({t:T('cv.d2',{n}),s:'D2 · '+n,x:CLEFT.x+CLEFT.w-8,al:'right',c:'rgba(255,204,0,.85)'});
+  // Priorità quando lo spazio manca: carattere fino a 9 px, poi senza l'etichetta dell'enzima (i Pac-Man si spiegano da
+  // soli e stanno in legenda), e solo alla fine le sigle sole, che nella vista semplificata non esistono
+  let list=items,size=10,short=false;
+  const fits=()=>{ctx.font=`700 ${size}px "Segoe UI",system-ui,sans-serif`;const w=list.reduce((a,it)=>a+ctx.measureText(short?it.s:it.t).width,0);return w<=CLEFT.w-20-14*(list.length-1);};
+  const shrink=(floor)=>{size=10;while(!fits()&&size>floor)size-=0.5;return fits();};
+  if(!shrink(9)&&list.length===3){list=[items[0],items[2]];if(!shrink(9)){list=items;short=true;shrink(8.5);}}   // meglio due etichette leggibili che tre minuscole
+  else if(!fits()&&!simpleView){short=true;shrink(8.5);}
+  for(const it of list){ctx.textAlign=it.al;ctx.fillStyle=it.c;ctx.fillText(short?it.s:it.t,it.x,16);}
   ctx.textAlign='left';ctx.font='600 9.5px "Segoe UI",system-ui,sans-serif';ctx.fillStyle='rgba(130,170,235,.7)';ctx.fillText(T('cv.axon'),6,TERM.cy-TERM.axonR-6);
   if(H>=300){ctx.save();ctx.translate(W-9,H*.5);ctx.rotate(-Math.PI/2);ctx.font='700 9px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='rgba(255,226,122,.7)';ctx.fillText(T('cv.cortex'),0,0);ctx.restore();}
   drawRates();

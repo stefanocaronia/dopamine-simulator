@@ -27,6 +27,9 @@ function check(root){
       if(m)problems.push(`${lang}: "${m[1]}" still visible in ${k}`);
       if(/<i class="c-[a-z0-9]+"><\/i>/.test(out))problems.push(`${lang}: empty coloured span left in ${k}`);
       if(/[(（]\s*[)）]/.test(out))problems.push(`${lang}: empty parentheses left in ${k}`);
+      if(/<(?:b|i)(?: class="[^"]*")?>\s/.test(out))problems.push(`${lang}: space right inside an inline tag in ${k}`);
+      const dup=out.replace(/<[^>]+>/g,'').match(/(?<![\p{L}])(\p{L}{4,})\s+\1(?![\p{L}])/iu);   // "receptors receptors": name kept next to a replaced acronym
+      if(dup)problems.push(`${lang}: repeated word "${dup[1]}" in ${k}`);
     }
   }
   return {problems,checked};
