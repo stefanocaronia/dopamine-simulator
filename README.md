@@ -8,7 +8,7 @@ An interactive, educational simulation of a dopamine synapse. Watch dopamine get
 
 ## What you can do
 - Switch brain (neurotypical or ADHD), age, stimulus and time scale
-- Pick an activity instead of a number: a hard and boring task, video and streaming, a deadline coming up, a video game, a strong interest — and see which ones switch on an ADHD brain without medication
+- In kids mode, pick an activity instead of a number: a hard and boring task, video and streaming, a deadline coming up, a video game, a strong interest — and see which ones switch on an ADHD brain without medication
 - Interventions: caffeine, ADHD medication, exercise, sleep
 - Addictions: easy rewards (scrolling, gaming, gambling…), nicotine, cannabis, alcohol, cocaine, each with its after-effect and its cost in receptors
 - Watch the neurons fire: a tonic pacemaker and phasic bursts travel down the axon, light up the terminal and release dopamine in packets; the receiving neurons fire only when a cortical input arrives while dopamine has made them receptive

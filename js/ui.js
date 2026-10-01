@@ -24,7 +24,7 @@ function stimToast(){
   const lvl=stimLevel(stimulus),b=T('t.stim.'+lvl[0]+'.b',P);
   // Con un'attività scelta il toast porta il suo nome e una riga in più; video e videogioco rimandano all'interruttore
   // delle ricompense facili, che resta separato: il pulsante è quello che fai adesso, l'interruttore è l'abitudine
-  const a=activityNow();
+  const a=kidMode?activityNow():null;   // i pulsanti ci sono solo in modalità Ragazzi: altrove il 15% resta "stimolo basso"
   if(a)return {key:'stim',c:lvl[1],t:T('tip.act-'+a.id+'.t'),s:v+'%',
     b:'<p>'+T('t.act.'+a.id)+(a.id==='video'||a.id==='game'?' '+T('t.act.habit',{card:T('card.subst')}):'')+'</p>'+b};
   return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b};

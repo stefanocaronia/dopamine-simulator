@@ -55,7 +55,7 @@ function check(root){
       G('hover=null;');
       // toasts and tooltips build without throwing in this state
       G('buildToasts();for(const k of Object.keys(TIPS))TIPS[k]({ni:0,p:particles[0]||null,x:0,y:0});');
-      G('for(const a of ACTIVITIES){setStimulus(a.stim);buildToasts();}setStimulus(0.6);');   // the stimulus toast with each activity's name
+      G('kidMode=true;for(const a of ACTIVITIES){setStimulus(a.stim);buildToasts();}kidMode=false;setStimulus(0.6);');   // the stimulus toast with each activity's name (kids mode)
     }catch(e){problems.push(sc.name+': '+e.message);}
   }
   return {problems,scenes:scenes.length};

@@ -101,7 +101,8 @@ i[class^="c-"]{font-style:normal;font-weight:700}
 .ctrl .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px}
 .ctrl .lbl small{text-transform:none;letter-spacing:0;font-weight:400;color:var(--dim);font-size:.72rem}
 .ctrl .val{font-size:.95rem;font-weight:700;color:#e2ebf5;font-variant-numeric:tabular-nums}
-.acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.acts{display:none;flex-wrap:wrap;gap:5px;margin-top:4px}
+body.kid .acts{display:flex}
 .acts button{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;background:var(--panel-2);color:var(--muted);font-family:inherit;font-weight:600;font-size:.76rem;line-height:1.25;white-space:nowrap;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
 .acts button i{font-style:normal;font-size:.95rem;line-height:1}
 .acts button:hover{border-color:rgba(0,255,136,.45);color:#fff}

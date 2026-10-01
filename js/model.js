@@ -48,15 +48,17 @@ const SCROLL_BURST_RATE=1.0,SCROLL_BURST_N=12,SCROLL_COST=0.03,SCROLL_DESENS=0.0
 // D2_MAX = massimo raggiungibile (neurotipico a 5 anni): è il fondo scala della barra dei recettori
 const AGE_REF=30,D2_REF=12,AGE_MIN=5,AGE_MAX=100;
 const D2_MAX=Math.round(D2_REF*(1+0.01*(AGE_REF-AGE_MIN)));
-// Attività: scorciatoie per lo slider dello stimolo e nient'altro (nessun parametro nascosto: ogni attività si può rifare
-// a mano con lo slider). Valori indicativi, scelti perché a 12 anni la noia separi i due cervelli (neurotipico ~64% del
-// tempo ricettivo, ADHD ~26%, ADHD col farmaco ~63%) e scadenza, videogioco e passione accendano anche il cervello ADHD
+// Attività (solo modalità Ragazzi): scorciatoie per lo slider dello stimolo e nient'altro (nessun parametro nascosto:
+// ogni attività si può rifare a mano con lo slider). Valori indicativi e volutamente distanti, scelti a 12 anni, l'età
+// della modalità: il cervello ADHD passa da quasi sempre spento (noia, ~15% del tempo ricettivo) a metà (video, ~54%)
+// ad acceso (scadenza ~86%, videogioco ~98%, passione 100%); con la noia il neurotipico è ricettivo ~47% del tempo e
+// l'ADHD col farmaco ~46%
 const ACTIVITIES=[
-  {id:'bore',stim:0.20,icon:'🥱'},
-  {id:'video',stim:0.40,icon:'📺'},
-  {id:'deadline',stim:0.50,icon:'⏰'},
-  {id:'game',stim:0.70,icon:'🎮'},
-  {id:'passion',stim:0.80,icon:'⭐'},
+  {id:'bore',stim:0.15,icon:'🥱'},
+  {id:'video',stim:0.35,icon:'📺'},
+  {id:'deadline',stim:0.55,icon:'⏰'},
+  {id:'game',stim:0.80,icon:'🎮'},
+  {id:'passion',stim:1.00,icon:'⭐'},
 ];
 // L'attività il cui valore coincide con lo stimolo attuale (al punto percentuale), o null se lo slider è altrove
 function activityNow(){const v=Math.round(stimulus*100);return ACTIVITIES.find(a=>Math.round(a.stim*100)===v)||null;}
