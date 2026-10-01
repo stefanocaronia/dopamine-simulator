@@ -51,14 +51,14 @@ const D2_MAX=Math.round(D2_REF*(1+0.01*(AGE_REF-AGE_MIN)));
 // Attività (solo modalità Ragazzi): scorciatoie per lo slider dello stimolo e nient'altro (nessun parametro nascosto:
 // ogni attività si può rifare a mano con lo slider). Valori indicativi e volutamente distanti, scelti a 12 anni, l'età
 // della modalità: il cervello ADHD passa da quasi sempre spento (noia, ~15% del tempo ricettivo) a metà (video, ~54%)
-// ad acceso (scadenza ~86%, videogioco ~98%, passione 100%); con la noia il neurotipico è ricettivo ~47% del tempo e
+// ad acceso (scadenza ~86%, videogioco ~98%, passione ~99%); con la noia il neurotipico è ricettivo ~47% del tempo e
 // l'ADHD col farmaco ~46%
 const ACTIVITIES=[
   {id:'bore',stim:0.15,icon:'🥱'},
   {id:'video',stim:0.35,icon:'📺'},
   {id:'deadline',stim:0.55,icon:'⏰'},
   {id:'game',stim:0.80,icon:'🎮'},
-  {id:'passion',stim:1.00,icon:'⭐'},
+  {id:'passion',stim:0.95,icon:'⭐'},
 ];
 // L'attività il cui valore coincide con lo stimolo attuale (al punto percentuale), o null se lo slider è altrove
 function activityNow(){const v=Math.round(stimulus*100);return ACTIVITIES.find(a=>Math.round(a.stim*100)===v)||null;}
