@@ -126,6 +126,7 @@ function applyI18n(){
   document.documentElement.dir=m.dir;
   document.title=T('doc.title');
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=T(el.dataset.i18n);});
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>{el.setAttribute('aria-label',T(el.dataset.i18nAria));});
   const pb=$('btn-pause');if(pb)pb.title=T('pause.title');
   const btn=$('lang-btn');
   if(btn){btn.querySelector('use').setAttribute('href','#flag-'+lang);btn.querySelector('.lang-code').textContent=lang.toUpperCase();btn.setAttribute('aria-label',m.name);}

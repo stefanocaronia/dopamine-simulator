@@ -13,6 +13,7 @@ function trendText(){
   if(trendState==='up')return T('t.trend.up',{tr:fmt1(Math.max(tr,0.1))});
   return T('t.trend.hold',{tr:(tr>=0?'+':'')+fmt1(tr)});
 }
+function stimLevel(s){return s<0.05?['none',C.cleft]:s<0.35?['low',C.stimLow]:s<0.7?['mid',C.dopa]:['high',C.stimHigh];}
 function stimToast(){
   const v=Math.round(stimulus*100),q=passPct();
   // activeShown: % di tempo ricettivo (media lenta con isteresi); sotto il 5% ma non zero si scrive "&lt;5", così le accensioni rare non spariscono.
@@ -20,8 +21,13 @@ function stimToast(){
   const p=activeShown>0?String(activeShown):'&lt;5';
   const act=activeBox<=0?T('u.receptive.none'):q===0?T('u.receptive.nopass',{p}):T('u.receptive',{p,q});
   const P={rel:displayRelRate,act,trend:trendText()};
-  const lvl=stimulus<0.05?['none',C.cleft]:stimulus<0.35?['low',C.stimLow]:stimulus<0.7?['mid',C.dopa]:['high',C.stimHigh];
-  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b:T('t.stim.'+lvl[0]+'.b',P)};
+  const lvl=stimLevel(stimulus),b=T('t.stim.'+lvl[0]+'.b',P);
+  // Con un'attività scelta il toast porta il suo nome e una riga in più; video e videogioco rimandano all'interruttore
+  // delle ricompense facili, che resta separato: il pulsante è quello che fai adesso, l'interruttore è l'abitudine
+  const a=activityNow();
+  if(a)return {key:'stim',c:lvl[1],t:T('tip.act-'+a.id+'.t'),s:v+'%',
+    b:'<p>'+T('t.act.'+a.id)+(a.id==='video'||a.id==='game'?' '+T('t.act.habit',{card:T('card.subst')}):'')+'</p>'+b};
+  return {key:'stim',c:lvl[1],t:T('t.stim.'+lvl[0]+'.t'),s:v+'%',b};
 }
 function buildToasts(){
   const list=[],pct=Math.round(vesCount/MAX_VES*100),depleted=vesCount/MAX_VES<0.05,low=vesCount/MAX_VES<0.15;
@@ -122,6 +128,7 @@ const TIPS={
   serbatoio:()=>({t:T('tip.serbatoio.t'),c:C.dopa,b:T('tip.serbatoio.b',{trend:trendText()})}),
   pause:()=>({t:T('tip.pause.t'),c:C.cleft,b:T('tip.pause.b')}),
 };
+for(const a of ACTIVITIES)TIPS['act-'+a.id]=()=>({t:T('tip.act-'+a.id+'.t'),c:stimLevel(a.stim)[1],b:T('tip.act-'+a.id+'.b')+T('tip.act.set',{v:Math.round(a.stim*100)})});
 
 const tip=$('tip');
 let hover=null,canvasMouse={over:false,mx:0,my:0,cx:0,cy:0},uiTip=null,lastHit=null,lastHitT=0,touchTimer=0;
@@ -201,6 +208,8 @@ function updateHUD(){
   setText('d2-count',String(eff));
   if(hudCache.paused!==paused){hudCache.paused=paused;$('btn-pause').classList.toggle('paused',paused);}
   if(hudCache.mode!==mode){hudCache.mode=mode;document.querySelectorAll('#mode-seg button').forEach(b=>b.classList.toggle('is-on',b.dataset.mode===mode));}
+  const act=activityNow(),aid=act?act.id:'';
+  if(hudCache.act!==aid){hudCache.act=aid;document.querySelectorAll('#acts button').forEach(b=>{const on=b.dataset.act===aid;b.classList.toggle('is-on',on);b.setAttribute('aria-pressed',String(on));});}
 }
 
 // ───────────────────────── Impostazioni salvate (localStorage) ─────────────────────────
@@ -275,10 +284,16 @@ function initPages(){
 
 // ───────────────────────── Controlli ─────────────────────────
 function syncRange(el,v,min,max){el.style.setProperty('--pct',((v-min)/(max-min)*100)+'%');}
+// Stimolo in punti percentuali: modello, slider ed etichetta insieme (lo usano lo slider e i pulsanti delle attività)
+function setStimUI(v){setStimulus(v/100);const el=$('stimulus');el.value=v;$('stim-val').textContent=v+'%';syncRange(el,v,0,100);saveSettings();}
 function initUI(){
   loadSettings();
   const stimEl=$('stimulus'),speedEl=$('speed');
-  stimEl.addEventListener('input',e=>{setStimulus(e.target.value/100);$('stim-val').textContent=e.target.value+'%';syncRange(stimEl,+e.target.value,0,100);saveSettings();});
+  stimEl.addEventListener('input',e=>setStimUI(+e.target.value));
+  // Attività: esclusive come radio button, accese quando lo stimolo coincide con il loro valore (updateHUD)
+  const acts=$('acts');
+  acts.innerHTML=ACTIVITIES.map(a=>'<button type="button" data-act="'+a.id+'" data-tip="act-'+a.id+'" aria-pressed="false"><i aria-hidden="true">'+a.icon+'</i><span data-i18n="act.'+a.id+'">'+T('act.'+a.id)+'</span></button>').join('');
+  acts.addEventListener('click',e=>{const b=e.target instanceof Element?e.target.closest('button[data-act]'):null;const a=b&&ACTIVITIES.find(x=>x.id===b.dataset.act);if(a)setStimUI(Math.round(a.stim*100));});
   speedEl.addEventListener('input',e=>{setSpeed(parseFloat(e.target.value));$('speed-val').textContent=e.target.value+'×';syncRange(speedEl,speedMul,1,8);saveSettings();});
   stimEl.value=Math.round(stimulus*100);speedEl.value=speedMul;
   $('stim-val').textContent=stimEl.value+'%';$('speed-val').textContent=speedEl.value+'×';

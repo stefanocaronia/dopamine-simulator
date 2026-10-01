@@ -176,6 +176,28 @@ reset({stim:0.5,speed:2});M.startCaffeine();M.startMph();M.startExercise();M.tog
 const finite=Object.values(s).every(v=>typeof v!=='number'||Number.isFinite(v));
 ok('no NaN/Infinity in the state',finite);ok('particles within MAX_P',s.parts<=G('MAX_P'),s.parts);ok('reserve within 0..100',s.ves>=0&&s.ves<=100,fmt(s.ves));ok('D2 sensitivity within 0.3..1',s.sens>=0.3&&s.sens<=1,fmt(s.sens));ok('sleep debt within 0..1',s.debt>=0&&s.debt<=1,fmt(s.debt));ok('counters non-negative',[s.total,s.fires,s.misses,s.comt,s.lost,s.maob].every(v=>v>=0));
 
+// ── F2. activity buttons: shortcuts for the stimulus slider only ──
+// What they are for, at 12 (the age of kids mode): a boring task separates the two brains, the medication closes the
+// gap, urgency and passion open it without medication. If a model change breaks this, the activity values need a look.
+section('F2. activities');
+const ACTS=G('ACTIVITIES'),act=id=>ACTS.find(a=>a.id===id).stim;
+ok('five activities with increasing stimulus',ACTS.length===5&&ACTS.every((a,i)=>i===0||a.stim>ACTS[i-1].stim),ACTS.map(a=>a.id+' '+a.stim).join(', '));
+reset({stim:act('deadline')});ok('activityNow() finds the activity at its stimulus',G('activityNow()&&activityNow().id')==='deadline');
+M.setStimulus(act('deadline')+0.01);ok('activityNow() is null one point away',G('activityNow()')===null);
+const recAt=o=>{reset(Object.assign({age:12},o));run(10);if(o.mph){M.startMph();run(3);return run(24);}return run(30);};
+const boreN=recAt({stim:act('bore')}),boreA=recAt({mode:'adhd',stim:act('bore')}),boreM=recAt({mode:'adhd',stim:act('bore'),mph:true});
+ok('boring task: the neurotypical brain is receptive far more than the ADHD one',boreN-boreA>=0.2,`${fmt(boreN)} vs ${fmt(boreA)}`);
+ok('boring task: the medication brings the ADHD brain close to the neurotypical one',Math.abs(boreM-boreN)<=0.15,`${fmt(boreM)} vs ${fmt(boreN)}`);
+const deadA=recAt({mode:'adhd',stim:act('deadline')});
+ok('deadline: the ADHD brain far above the boring task, without medication',deadA-boreA>=0.35,`${fmt(deadA)} vs ${fmt(boreA)}`);
+const passN=recAt({stim:act('passion')}),passA=recAt({mode:'adhd',stim:act('passion')});
+within('passion: neurotypical receptive fraction',passN,0.9,1);within('passion: ADHD receptive fraction',passA,0.85,1);
+// every activity has its texts in the source dictionary
+const itCtx={};itCtx.window=itCtx;vm.createContext(itCtx);vm.runInContext(fs.readFileSync(path.join(root,'i18n/it.js'),'utf8'),itCtx);
+const IT=vm.runInContext('I18N.it',itCtx),missing=[];
+for(const a of ACTS)for(const k of ['act.'+a.id,'tip.act-'+a.id+'.t','tip.act-'+a.id+'.b','t.act.'+a.id])if(IT[k]==null)missing.push(k);
+ok('every activity has label, tooltip and toast line in it.js',missing.length===0,missing.join(', '));
+
 // ── G. dictionaries ──
 section('G. dictionaries');
 const i18n=require('./i18n.js').check(root);
